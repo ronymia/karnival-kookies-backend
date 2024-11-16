@@ -1,4 +1,4 @@
-import { RequestHandler, Request, Response } from 'express';
+import { RequestHandler, Request, Response, NextFunction } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
 import { AuthServices } from './auth.service';
@@ -152,10 +152,10 @@ const logOut: RequestHandler = catchAsync(
 
 // SEND PASSWORD CODE
 const sendPasswordCode: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const email = req.body.email;
+  async (req: Request, res: Response, next: NextFunction) => {
+    // const email = req.body.email;
 
-    const result = await AuthControllers.sendPasswordCode(email);
+    const result = await AuthControllers.sendPasswordCode(req, res, next);
     // SET REFRESH TOKEN TO COOKIE
     // const cookieOptions = {
     //   secure: config.node_env === 'product',

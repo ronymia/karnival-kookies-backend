@@ -208,7 +208,7 @@ const getProductById = async (id: any) => {
 
 //   GET PRODUCT BY CATEGORY
 const getProductByCategoryID = async (id: any, reqQuery: any) => {
-  const { limit = 4, skip } = query;
+  const { limit = 4, skip } = reqQuery;
 
   const query = skip
     ? 'SELECT * FROM product WHERE category = ? AND id != ? LIMIT ?'
@@ -218,11 +218,11 @@ const getProductByCategoryID = async (id: any, reqQuery: any) => {
     ? [id, parseInt(skip), parseInt(limit)]
     : [id, parseInt(limit)];
 
-  const [products] = await pool.query(query, values);
+  const [products] = (await pool.query(query, values)) as any[];
 
   return {
     success: true,
-    data: products?.map((product) => {
+    data: products?.map((product: any) => {
       try {
         const parsedImages = JSON.parse(product.images);
         return {
@@ -249,10 +249,10 @@ const getRandomProduct = async (reqQuery: any) => {
   const { page = 1, perPage = 8, searchKey = '' } = reqQuery;
   const offset = (page - 1) * perPage;
   let query = `SELECT * FROM product `;
-  let queryParams = [];
+  const queryParams = [];
 
   let countQuery = `SELECT COUNT(*) as count FROM product `;
-  let countQueryParams = [];
+  const countQueryParams = [];
 
   if (searchKey && searchKey !== 'undefined') {
     query += `WHERE name LIKE ? OR description LIKE ? `;
@@ -266,16 +266,19 @@ const getRandomProduct = async (reqQuery: any) => {
   queryParams.push(parseInt(perPage), offset);
 
   // Fetch paginated products
-  const [products] = await pool.query(query, queryParams);
+  const [products] = (await pool.query(query, queryParams)) as any[];
 
   // Fetch total number of products with the same filters applied
-  const [totalProductsResult] = await pool.query(countQuery, countQueryParams);
+  const [totalProductsResult] = (await pool.query(
+    countQuery,
+    countQueryParams,
+  )) as any[];
   const totalProducts = totalProductsResult[0].count;
 
   // Process and send response
   return {
     success: true,
-    data: products?.map((product) => {
+    data: products?.map((product: any) => {
       try {
         const parsedImages = JSON.parse(product.images);
         return {
@@ -319,7 +322,7 @@ const getProductByPriceRange = async () => {
 };
 
 // UPLOAD PRODUCT IMAGES
-const uploadProductImage = async (files): any => {
+const uploadProductImage = async (files: any) => {
   const docs = files?.map((file: any) => ({
     file: file?.filename,
     id: file?.originalname,

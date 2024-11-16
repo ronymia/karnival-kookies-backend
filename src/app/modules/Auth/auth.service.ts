@@ -7,7 +7,8 @@ import { PasswordHelpers } from '../../../helpers/passwordHelpers';
 import { pool } from '../../../shared/mySQL';
 import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
-import jwt, { Secret } from 'jsonwebtoken';
+import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
+import { NextFunction, Request, Response } from 'express';
 
 // USER REGISTER FUNCTION
 const registerUser = async (payload: TRegisterUser) => {
@@ -151,9 +152,9 @@ const refreshToken = async () => {};
 
 // PASSWORD RESET
 const resetPassword = async (email: string, password: string) => {
-  const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [
+  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
     email,
-  ]);
+  ])) as any[];
 
   const user = rows[0];
 
@@ -173,7 +174,12 @@ const resetPassword = async (email: string, password: string) => {
 };
 
 //  SEND PASSWORD CODE
-const sendPasswordCode = async (email: string) => {
+const sendPasswordCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const { email } = req.body;
   const code = generateCode() + '';
 
   // Check if the user exists
@@ -212,9 +218,9 @@ const sendPasswordCode = async (email: string) => {
 // VERIFY USER MAIL
 const verifyUserMail = async (payload: any, email: string, otp: any) => {
   //
-  const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [
+  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
     email,
-  ]);
+  ])) as any[];
   const user = rows[0];
 
   // USER NOT EXIST
@@ -266,31 +272,41 @@ const verifyUserMail = async (payload: any, email: string, otp: any) => {
 
 // GET CURRENT USER
 const getCurrentUser = async (token: Secret) => {
-  jwt.verify(token, config.jwt.access_token, async (err, user) => {
-    if (err) {
+  try {
+    const decoded = jwt.verify(
+      token as string,
+      config.jwt.access_token as string,
+    ) as JwtPayload | null;
+
+    if (!decoded || typeof decoded === 'string' || !decoded.email) {
       return { user: null };
-    } else if (user) {
-      const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [
-        user?.email,
-      ]);
-      const result = rows[0];
-      if (result?.isVerified) {
-        return {
-          user: {
-            role: result?.role,
-            name: result?.name,
-            phone: result?.phone,
-            email: result?.email,
-            isVerified: result?.isVerified,
-            createdAt: result?.createdAt,
-            updatedAt: result?.updatedAt,
-          },
-        };
-      } else {
-        return { user: null };
-      }
     }
-  });
+
+    // Query the database for the user
+    const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
+      decoded.email,
+    ])) as any[];
+
+    const result = rows[0];
+    if (result?.isVerified) {
+      return {
+        user: {
+          role: result.role,
+          name: result.name,
+          phone: result.phone,
+          email: result.email,
+          isVerified: result.isVerified,
+          createdAt: result.createdAt,
+          updatedAt: result.updatedAt,
+        },
+      };
+    } else {
+      return { user: null };
+    }
+  } catch (err) {
+    // Handle invalid token or other errors
+    return { user: null };
+  }
 };
 
 //

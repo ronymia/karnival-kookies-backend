@@ -94,10 +94,10 @@ const getAllCarts = async (
   // const perPage = parseInt(req.query.perPage) || 20; // Default to 10 items per page
   const offset = (page - 1) * perPage;
 
-  const [checkoutItems] = await pool.query(
+  const [checkoutItems] = (await pool.query(
     'SELECT * FROM checkout ORDER BY createdAt DESC LIMIT ? OFFSET ?',
     [perPage, offset],
-  );
+  )) as any[];
 
   const parsedCheckouts = checkoutItems.map((checkout: any) => {
     const parsedCheckoutInfo = JSON.parse(checkout.checkoutInfo);
@@ -110,17 +110,20 @@ const getAllCarts = async (
   });
 
   const productIds = parsedCheckouts
-    .map((item) => item?.paymentInfo)
+    .map((item: any) => item?.paymentInfo)
     ?.flat()
-    ?.map((item) => item?.productId);
-  const [products] = await pool.query('SELECT * FROM product WHERE id IN (?)', [
-    productIds,
-  ]);
+    ?.map((item: any) => item?.productId);
 
-  const finalCheckouts = parsedCheckouts.map((item) => {
-    const paymentInfoWithId = item?.paymentInfo?.map((payment) => {
+  //
+  const [products] = (await pool.query(
+    'SELECT * FROM product WHERE id IN (?)',
+    [productIds],
+  )) as any[];
+
+  const finalCheckouts = parsedCheckouts.map((item: any) => {
+    const paymentInfoWithId = item?.paymentInfo?.map((payment: any) => {
       const product = products?.find(
-        (product) => product?.id === payment?.productId,
+        (product: any) => product?.id === payment?.productId,
       );
       //  console.log({ product });
       return {
@@ -167,17 +170,12 @@ const checkOutByEmail = async (
   paginationOptions: TPaginationOptions,
   email: string,
 ) => {
-  const {
-    page,
-    limit: perPage,
-    skip,
-    sortBy,
-    sortOrder,
-  } = paginationHelpers.calculatePagination(paginationOptions);
+  const { page, limit: perPage } =
+    paginationHelpers.calculatePagination(paginationOptions);
 
-  const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [
+  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
     email,
-  ]);
+  ])) as any[];
 
   const user = rows[0];
 
@@ -192,12 +190,12 @@ const checkOutByEmail = async (
 
   //
   // Get paginated and ordered checkout items
-  const [checkoutItems] = await pool.query(
+  const [checkoutItems] = (await pool.query(
     'SELECT * FROM checkout WHERE userEmail = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?',
     [email, perPage, offset],
-  );
+  )) as any[];
 
-  const parsedCheckouts = checkoutItems.map((checkout) => {
+  const parsedCheckouts = checkoutItems.map((checkout: any) => {
     const parsedCheckoutInfo = JSON.parse(checkout.checkoutInfo);
     const parsedPaymentInfo = JSON.parse(checkout.paymentInfo);
     return {
@@ -208,17 +206,18 @@ const checkOutByEmail = async (
   });
 
   const productIds = parsedCheckouts
-    .map((item) => item?.paymentInfo)
+    .map((item: any) => item?.paymentInfo)
     ?.flat()
-    ?.map((item) => item?.productId);
-  const [products] = await pool.query('SELECT * FROM product WHERE id IN (?)', [
-    productIds,
-  ]);
+    ?.map((item: any) => item?.productId);
+  const [products] = (await pool.query(
+    'SELECT * FROM product WHERE id IN (?)',
+    [productIds],
+  )) as any[];
 
-  const finalCheckouts = parsedCheckouts.map((item) => {
-    const paymentInfoWithId = item?.paymentInfo?.map((payment) => {
+  const finalCheckouts = parsedCheckouts.map((item: any) => {
+    const paymentInfoWithId = item?.paymentInfo?.map((payment: any) => {
       const product = products?.find(
-        (product) => product?.id === payment?.productId,
+        (product: any) => product?.id === payment?.productId,
       );
       console.log({ product });
       return {
@@ -234,10 +233,10 @@ const checkOutByEmail = async (
   });
 
   // Get total count of checkout items
-  const [totalItemResult] = await pool.query(
+  const [totalItemResult] = (await pool.query(
     'SELECT COUNT(*) as count FROM checkout WHERE userEmail = ?',
     [email],
-  );
+  )) as any[];
   const totalItem = totalItemResult[0].count;
 
   return {
