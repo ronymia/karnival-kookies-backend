@@ -1,0 +1,336 @@
+import httpStatus from 'http-status';
+import AppError from '../../../errors/AppError';
+import { pool } from '../../../shared/mySQL';
+import { TPaginationOptions } from '../../../interfaces/pagination';
+import { paginationHelpers } from '../../../helpers/paginationHelpers';
+import { EmailHelpers } from '../../../helpers/emailHelpers';
+
+//   CREATE A NEW CART
+const createCart = async (payload: any) => {
+  const { productId, email, quantity } = payload;
+
+  //
+  // Check if cart item already exists
+  const [exists] = (await pool.query(
+    'SELECT * FROM cart WHERE email = ? AND productId = ?',
+    [email, productId],
+  )) as any[];
+  if (exists.length) {
+    return { success: false, quantity, exists: exists[0] };
+  }
+
+  // Insert new cart item
+  const [result] = await pool.query(
+    'INSERT INTO cart (productId, email, quantity, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+    [productId, email, quantity, new Date(), new Date()],
+  );
+
+  //
+  return result;
+};
+
+// GET ALL CART USER SPECIFIC BY EMAIL
+const getCartByEmail = async (email: string) => {
+  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
+    email,
+  ])) as any[];
+
+  const user = rows[0];
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Invalid Email');
+  }
+  // Get cart items
+  const [cartItems] = (await pool.query('SELECT * FROM cart WHERE email = ?', [
+    email,
+  ])) as any[];
+
+  // Get total count of cart items
+  const [totalItemResult] = (await pool.query(
+    'SELECT COUNT(*) as count FROM cart WHERE email = ?',
+    [email],
+  )) as any[];
+  const totalItem = totalItemResult[0].count;
+
+  // Get product details for cart items
+  const productIds = cartItems.map((item: any) => item.productId);
+  const [products] = (await pool.query(
+    'SELECT * FROM product WHERE id IN (?)',
+    [productIds],
+  )) as any[];
+
+  // Combine cart items with product details
+  const carts = cartItems.map((item: any) => {
+    const product = products.find((p: any) => p.id === item.productId);
+    return {
+      ...item,
+      product: {
+        ...product,
+        images: JSON.parse(product?.images),
+      },
+    };
+  });
+
+  return {
+    data: carts,
+    total: totalItem,
+  };
+};
+
+// GET ALL CARTS FOR ADMIN
+const getAllCarts = async (
+  filters: any,
+  paginationOptions: TPaginationOptions,
+) => {
+  const {
+    page,
+    limit: perPage,
+    skip,
+    sortBy,
+    sortOrder,
+  } = paginationHelpers.calculatePagination(paginationOptions);
+  // const offset = (page - 1) * perPage;
+  // const page = parseInt(req.query.page) || 1; // Default to page 1
+  // const perPage = parseInt(req.query.perPage) || 20; // Default to 10 items per page
+  const offset = (page - 1) * perPage;
+
+  const [checkoutItems] = await pool.query(
+    'SELECT * FROM checkout ORDER BY createdAt DESC LIMIT ? OFFSET ?',
+    [perPage, offset],
+  );
+
+  const parsedCheckouts = checkoutItems.map((checkout: any) => {
+    const parsedCheckoutInfo = JSON.parse(checkout.checkoutInfo);
+    const parsedPaymentInfo = JSON.parse(checkout.paymentInfo);
+    return {
+      ...checkout,
+      checkoutInfo: parsedCheckoutInfo,
+      paymentInfo: parsedPaymentInfo,
+    };
+  });
+
+  const productIds = parsedCheckouts
+    .map((item) => item?.paymentInfo)
+    ?.flat()
+    ?.map((item) => item?.productId);
+  const [products] = await pool.query('SELECT * FROM product WHERE id IN (?)', [
+    productIds,
+  ]);
+
+  const finalCheckouts = parsedCheckouts.map((item) => {
+    const paymentInfoWithId = item?.paymentInfo?.map((payment) => {
+      const product = products?.find(
+        (product) => product?.id === payment?.productId,
+      );
+      //  console.log({ product });
+      return {
+        ...payment,
+        product: { ...product, images: JSON.parse(product?.images) },
+      };
+    });
+    //  console.log({ payIn: paymentInfoWithId });
+    return {
+      ...item,
+      paymentInfo: paymentInfoWithId,
+    };
+  });
+
+  // Get total count of checkout items
+  const [totalItemResult] = (await pool.query(
+    'SELECT COUNT(*) as count FROM checkout',
+  )) as any[];
+  const totalItem = totalItemResult[0].count;
+
+  return {
+    data: finalCheckouts,
+    total: totalItem,
+    currentPage: page,
+    totalPages: Math.ceil(totalItem / perPage),
+  };
+};
+
+// UPDATE CART
+const updateCart = async (payload: any) => {
+  const { exists, quantity } = payload;
+
+  const result = await pool.query(
+    'UPDATE cart SET quantity = ?, updatedAt = ? WHERE id = ?',
+    [quantity, new Date(), exists.id],
+  );
+
+  return { result };
+};
+
+// CHECKOUT BY EMAIL
+const checkOutByEmail = async (
+  filters: any,
+  paginationOptions: TPaginationOptions,
+  email: string,
+) => {
+  const {
+    page,
+    limit: perPage,
+    skip,
+    sortBy,
+    sortOrder,
+  } = paginationHelpers.calculatePagination(paginationOptions);
+
+  const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [
+    email,
+  ]);
+
+  const user = rows[0];
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Invalid Email');
+  }
+
+  //
+  // const page = parseInt(req.query.page) || 1; // Default to page 1
+  // const perPage = parseInt(req.query.perPage) || 20; // Default to 10 items per page
+  const offset = (page - 1) * perPage;
+
+  //
+  // Get paginated and ordered checkout items
+  const [checkoutItems] = await pool.query(
+    'SELECT * FROM checkout WHERE userEmail = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?',
+    [email, perPage, offset],
+  );
+
+  const parsedCheckouts = checkoutItems.map((checkout) => {
+    const parsedCheckoutInfo = JSON.parse(checkout.checkoutInfo);
+    const parsedPaymentInfo = JSON.parse(checkout.paymentInfo);
+    return {
+      ...checkout,
+      checkoutInfo: parsedCheckoutInfo,
+      paymentInfo: parsedPaymentInfo,
+    };
+  });
+
+  const productIds = parsedCheckouts
+    .map((item) => item?.paymentInfo)
+    ?.flat()
+    ?.map((item) => item?.productId);
+  const [products] = await pool.query('SELECT * FROM product WHERE id IN (?)', [
+    productIds,
+  ]);
+
+  const finalCheckouts = parsedCheckouts.map((item) => {
+    const paymentInfoWithId = item?.paymentInfo?.map((payment) => {
+      const product = products?.find(
+        (product) => product?.id === payment?.productId,
+      );
+      console.log({ product });
+      return {
+        ...payment,
+        product: { ...product, images: JSON.parse(product?.images) },
+      };
+    });
+    console.log({ payIn: paymentInfoWithId });
+    return {
+      ...item,
+      paymentInfo: paymentInfoWithId,
+    };
+  });
+
+  // Get total count of checkout items
+  const [totalItemResult] = await pool.query(
+    'SELECT COUNT(*) as count FROM checkout WHERE userEmail = ?',
+    [email],
+  );
+  const totalItem = totalItemResult[0].count;
+
+  return {
+    data: finalCheckouts,
+    total: totalItem,
+    currentPage: page,
+    totalPages: Math.ceil(totalItem / perPage),
+  };
+};
+
+// CHECK OUT
+const checkOut = async (payload: any) => {
+  const {
+    userName,
+    userEmail,
+    checkoutInfo,
+    paymentInfo,
+    paymentMethod,
+    totalPayableAmount,
+    status,
+    isPaid,
+  } = payload;
+
+  //
+  const orderId = crypto.randomUUID();
+
+  // Insert checkout
+  const [result] = await pool.query(
+    'INSERT INTO checkout (userEmail, checkoutInfo, paymentInfo, paymentMethod, totalPayableAmount,orderId,status, isPaid, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+      userEmail,
+      JSON.stringify(checkoutInfo),
+      JSON.stringify(paymentInfo),
+      paymentMethod,
+      totalPayableAmount.toFixed(2),
+      orderId,
+      status,
+      isPaid,
+      new Date(),
+      new Date(),
+    ],
+  );
+  // console.log({ result });
+  // SEND ORDER CONFORMATION MALI
+  await EmailHelpers.orderConfirmationMail(userName, userEmail, orderId);
+  // Insert checkout info and payment info (assuming they're separate tables)
+  // await pool.query("INSERT INTO checkout_info SET ?", checkoutInfo);
+  // await pool.query("INSERT INTO payment_info SET ?", paymentInfo);
+
+  return { success: true, data: result };
+};
+
+// UPDATE CART STATUS
+const updateCartStatus = async (id: any, payload: any) => {
+  const { status } = payload;
+  const result = await pool.query(
+    'UPDATE checkout SET status = ? WHERE id = ?',
+    [status, id],
+  );
+
+  return { success: true, data: result };
+};
+
+// DELETE CART
+const deleteCart = async (id: any) => {
+  const [result] = (await pool.query('DELETE FROM cart WHERE id = ?', [
+    Number(id),
+  ])) as any[];
+  return result;
+};
+// DELETE BULK CART
+const deleteBulkCart = async (payload: any) => {
+  if (!Array.isArray(payload) || payload.length === 0) {
+    return { message: 'No IDs provided' };
+  }
+  const placeholders = payload.map(() => '?').join(',');
+
+  // Execute the DELETE query for all the provided payload
+  const [result] = await pool.query(
+    `DELETE FROM cart WHERE id IN (${placeholders})`,
+    payload,
+  );
+  return result;
+};
+//
+export const CartServices = {
+  createCart,
+  getCartByEmail,
+  getAllCarts,
+  updateCart,
+  checkOutByEmail,
+  checkOut,
+  updateCartStatus,
+  deleteCart,
+  deleteBulkCart,
+};
