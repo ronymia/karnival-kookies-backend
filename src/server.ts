@@ -2,6 +2,23 @@ import { Server } from 'http';
 import app from './app';
 import { errorLogger, logger } from './shared/logger';
 import config from './config';
+import mysql from 'mysql2';
+
+// MySQL connection
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DATABASE_URL,
+});
+
+db.connect((err) => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
+    return;
+  }
+  console.log('Connected to MySQL');
+});
 
 async function bootstrap() {
   const server: Server = app.listen(config.port, () => {

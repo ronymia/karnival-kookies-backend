@@ -22,6 +22,11 @@ app.use('/', express.static(path.join(process.cwd(), 'Images')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Home
+app.get('/', (req, res) => {
+  res.json('Hello world');
+});
+
 // Application routes
 app.use('/api/v1', routes);
 
