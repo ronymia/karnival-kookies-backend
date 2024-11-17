@@ -4,7 +4,7 @@ import { PAYMENT_CURRENCY, PAYMENT_METHOD } from './payment.interface';
 
 // STRIPE CONFIG
 const stripeConfig = async () => {
-  const stripeKey = config.stripe_public_key;
+  const stripeKey = config.stripe_public_key || '';
   return { publishableKey: stripeKey };
 };
 
