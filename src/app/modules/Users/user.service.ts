@@ -2,23 +2,13 @@ import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
 import { pool } from '../../../shared/mySQL';
 import { TPaginationOptions } from '../../../interfaces/pagination';
-import { paginationHelpers } from '../../../helpers/paginationHelpers';
 
 // GET ALL USERS
 const getAllUsers = async (
   filters: any,
   paginationOptions: TPaginationOptions,
 ) => {
-  const {
-    page,
-    limit: perPage,
-    skip,
-    sortBy,
-    sortOrder,
-  } = paginationHelpers.calculatePagination(paginationOptions);
-  // Get `page` and `perPage` from query parameters, with defaults
-  // let page = parseInt(req.query.page) || 1; // Default to page 1
-  // let perPage = parseInt(req.query.perPage) || 20; // Default to 20 per page
+  const { page = 1, perPage = 20 } = paginationOptions;
 
   // Calculate offset
   const offset = (page - 1) * perPage;

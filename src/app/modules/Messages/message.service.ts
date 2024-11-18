@@ -3,6 +3,7 @@ import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
 import { TMessage } from './message.interface';
 
+// CREATE
 const createMessage = async (payload: TMessage) => {
   const { name, email, message } = payload;
   // Insert new message into DB
@@ -20,17 +21,13 @@ const createMessage = async (payload: TMessage) => {
     updatedAt: new Date(),
   };
 };
+
+// GET ALL
 const getAllMessages = async (
   filter: any,
   paginationOptions: TPaginationOptions,
 ) => {
-  const {
-    page,
-    limit: perPage,
-    skip,
-    sortBy,
-    sortOrder,
-  } = paginationHelpers.calculatePagination(paginationOptions);
+  const { page = 1, perPage = 10 } = paginationOptions;
   const offset = (page - 1) * perPage;
   // Get paginated messages
   const [messages] = await pool.query(
@@ -45,14 +42,12 @@ const getAllMessages = async (
 
   //SEND TO CONTROLLER
   return {
-    meta: {
-      page,
-      limit: perPage,
-      total: totalMessages,
-    },
     data: messages,
+    total: totalMessages,
   };
 };
+
+// DELETE
 const deleteMessage = async (id: any) => {
   const [result] = (await pool.query('DELETE FROM message WHERE id = ?', [
     Number(id),

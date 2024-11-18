@@ -206,6 +206,8 @@ const sendPasswordCode = async (
 
   // SEND TO CONTROLLER
   return {
+    success: true,
+    message: 'Code sent',
     user: {
       id: user.id,
       name: user.name,

@@ -2,9 +2,6 @@ import { Request, RequestHandler, Response } from 'express';
 import catchAsync from '../../../shared/catchAsync';
 import { RatingServices } from './rating.service';
 import sendResponse from '../../../shared/sendResponse';
-import pick from '../../../shared/pick';
-import { paginationFields } from '../../../constants/pagination';
-import { ratingFilterableFields } from './rating.constant';
 import httpStatus from 'http-status';
 
 // CREATE
@@ -29,19 +26,20 @@ const createRating: RequestHandler = catchAsync(
 // GET ALL
 const getAllRatings: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const filters = pick(req.query, ratingFilterableFields);
-    const paginationOptions = pick(req.query, paginationFields);
+    // const filters = pick(req.query, ratingFilterableFields);
+    // const paginationOptions = pick(req.query, paginationFields);
     const { id } = req.params;
 
     const result = await RatingServices.getAllRatings(id);
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Rating fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Rating fetch successfully',
+    //   data: result,
+    // });
   },
 );
 

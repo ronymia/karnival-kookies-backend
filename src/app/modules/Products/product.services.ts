@@ -1,6 +1,5 @@
-import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
-import { TProduct, TProductFilters } from './product.interface';
+import { TProduct } from './product.interface';
 import mysql from 'mysql2/promise';
 
 const pool = mysql.createPool({
@@ -59,15 +58,9 @@ const getAllClientProducts = async (
   filter: any,
   paginationOptions: TPaginationOptions,
 ) => {
-  const {
-    page,
-    limit: perPage,
-    skip,
-    sortBy,
-    sortOrder,
-  } = paginationHelpers.calculatePagination(paginationOptions);
-
   const { category, fromPrice, toPrice, sortByNewest } = filter;
+  const { page = 1, perPage = 10 } = paginationOptions;
+
   const offset = (page - 1) * perPage;
 
   // Base query for products
@@ -245,8 +238,12 @@ const getProductByCategoryID = async (id: any, reqQuery: any) => {
 };
 
 //   GET RANDOM PRODUCT
-const getRandomProduct = async (reqQuery: any) => {
-  const { page = 1, perPage = 8, searchKey = '' } = reqQuery;
+const getRandomProduct = async (
+  filters: any,
+  paginationOptions: TPaginationOptions,
+) => {
+  const { searchKey = '' } = filters;
+  const { page = 1, perPage = 8 } = paginationOptions;
   const offset = (page - 1) * perPage;
   let query = `SELECT * FROM product `;
   const queryParams = [];
@@ -360,7 +357,7 @@ const updateProduct = async (payload: any) => {
     ],
   );
 
-  return { success: true, message: 'Product updated successfully', result };
+  return result;
 };
 
 // DELETE

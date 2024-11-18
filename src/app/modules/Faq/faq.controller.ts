@@ -3,9 +3,6 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import httpStatus from 'http-status';
 import { FaqServices } from './faq.service';
-import pick from '../../../shared/pick';
-import { paginationFields } from '../../../constants/pagination';
-import { faqFilterableFields } from './faq.constant';
 
 // CREATE
 const createFaq: RequestHandler = catchAsync(
@@ -26,21 +23,21 @@ const createFaq: RequestHandler = catchAsync(
   },
 );
 
-// CREATE
+// GET ALL FAQ
 const getAllFaq: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const filters = pick(req.query, faqFilterableFields);
-    const paginationOptions = pick(req.query, paginationFields);
+    // const filters = pick(req.query, faqFilterableFields);
+    // const paginationOptions = pick(req.query, paginationFields);
 
-    const result = await FaqServices.getAllFaq(filters, paginationOptions);
-
+    const result = await FaqServices.getAllFaq();
+    res.status(httpStatus.OK).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'FAQ fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'FAQ fetch successfully',
+    //   data: result,
+    // });
   },
 );
 

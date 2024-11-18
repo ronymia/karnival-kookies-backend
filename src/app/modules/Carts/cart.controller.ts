@@ -34,13 +34,14 @@ const getCartByEmail: RequestHandler = catchAsync(
 
     const result = await CartServices.getCartByEmail(email);
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'User Cart Data fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'User Cart Data fetch successfully',
+    //   data: result,
+    // });
   },
 );
 
@@ -53,13 +54,14 @@ const getAllCarts: RequestHandler = catchAsync(
 
     const result = await CartServices.getAllCarts(filters, paginationOptions);
 
+    res.status(httpStatus.OK).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Cart Data fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Cart Data fetch successfully',
+    //   data: result,
+    // });
   },
 );
 

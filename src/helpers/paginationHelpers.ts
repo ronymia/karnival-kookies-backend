@@ -1,13 +1,13 @@
 type TOptions = {
   page?: number;
-  limit?: number;
+  perPage?: number;
   sortBy?: string;
   sortOrder?: string;
 };
 
 type TPaginationResult = {
   page: number;
-  limit: number;
+  perPage: number;
   skip: number;
   sortBy: string;
   sortOrder: string;
@@ -15,15 +15,15 @@ type TPaginationResult = {
 
 const calculatePagination = (options: TOptions): TPaginationResult => {
   const page = Number(options.page) || 1;
-  const limit = Number(options.limit) || 10;
-  const skip = (page - 1) * limit;
+  const perPage = Number(options.perPage) || 10;
+  const skip = (page - 1) * perPage;
 
-  const sortBy = options.sortBy || "createdAt";
-  const sortOrder = options.sortOrder || "desc";
+  const sortBy = options.sortBy || 'createdAt';
+  const sortOrder = options.sortOrder || 'desc';
 
   return {
     page,
-    limit,
+    perPage,
     skip,
     sortBy,
     sortOrder,

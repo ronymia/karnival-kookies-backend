@@ -6,10 +6,10 @@ import { type TCreateCategoryType } from './categories.interface';
 const createCategory = async (payload: TCreateCategoryType) => {
   const { name, description } = payload;
   // Insert new category
-  const [result] = await pool.query<ResultSetHeader>(
+  const [result] = (await pool.query<ResultSetHeader>(
     'INSERT INTO category (name, description, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
     [name, description, new Date(), new Date()],
-  );
+  )) as any[];
 
   return {
     id: result?.insertId,
@@ -43,10 +43,10 @@ const getCategoryById = async () => {};
 const updateCategory = async (payload: TCreateCategoryType) => {
   const { id, name, description, createdAt } = payload;
   // Update the category
-  const result = await pool.query(
+  const [result] = (await pool.query(
     'UPDATE category SET name = ?, description = ?, createdAt = ?, updatedAt = ? WHERE id = ?',
     [name, description, createdAt, new Date(), id],
-  );
+  )) as any[];
 
   return result;
 };

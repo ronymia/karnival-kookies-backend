@@ -1,5 +1,3 @@
-import { paginationHelpers } from '../../../helpers/paginationHelpers';
-import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
 
 //CREATE
@@ -22,18 +20,7 @@ const createFaq = async (payload: any) => {
 };
 
 //GET ALL
-const getAllFaq = async (
-  filter: any,
-  paginationOptions: TPaginationOptions,
-) => {
-  const {
-    page,
-    limit: perPage,
-    skip,
-    sortBy,
-    sortOrder,
-  } = paginationHelpers.calculatePagination(paginationOptions);
-  const offset = (page - 1) * perPage;
+const getAllFaq = async () => {
   // Fetch all FAQs
   const [faqs] = await pool.query('SELECT * FROM faq');
   // Fetch total FAQ count
@@ -44,12 +31,8 @@ const getAllFaq = async (
 
   //SEND TO CONTROLLER
   return {
-    meta: {
-      page,
-      limit: perPage,
-      total: totalFaqs,
-    },
     data: faqs,
+    total: totalFaqs,
   };
 };
 

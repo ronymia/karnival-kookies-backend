@@ -3,9 +3,6 @@ import catchAsync from '../../../shared/catchAsync';
 import { DiscountServices } from './discount.service';
 import sendResponse from '../../../shared/sendResponse';
 import httpStatus from 'http-status';
-import pick from '../../../shared/pick';
-import { paginationFields } from '../../../constants/pagination';
-import { discountFilterableFields } from './discount.constant';
 
 // CREATE
 const createDiscount: RequestHandler = catchAsync(
@@ -48,29 +45,25 @@ const updateDiscount: RequestHandler = catchAsync(
 // GET ALL
 const getAllDiscounts: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const filters = pick(req.query, discountFilterableFields);
-    const paginationOptions = pick(req.query, paginationFields);
+    // const filters = pick(req.query, discountFilterableFields);
+    // const paginationOptions = pick(req.query, paginationFields);
 
-    const result = await DiscountServices.getAllDiscounts(
-      filters,
-      paginationOptions,
-    );
+    const result = await DiscountServices.getAllDiscounts();
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Discount data fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Discount data fetch successfully',
+    //   data: result,
+    // });
   },
 );
 
 // DELETE
 const deleteDiscount: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
     const { id } = req.params;
 
     const result = await DiscountServices.deleteDiscount(id);

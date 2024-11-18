@@ -4,7 +4,6 @@ import catchAsync from '../../../shared/catchAsync';
 import { AuthServices } from './auth.service';
 import config from '../../../config';
 import sendResponse from '../../../shared/sendResponse';
-import { TLoginUserResponse } from './auth.interface';
 import { PasswordHelpers } from '../../../helpers/passwordHelpers';
 
 //   JWT TOKEN
@@ -164,13 +163,14 @@ const sendPasswordCode: RequestHandler = catchAsync(
     // };
     // res.clearCookie('refresh_token', cookieOptions);
 
+    res.json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Code sent',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Code sent',
+    //   data: result,
+    // });
   },
 );
 
@@ -183,13 +183,14 @@ const verifyUserMail: RequestHandler = catchAsync(
 
     const result = await AuthServices.verifyUserMail(userData, email, otp);
 
+    res.json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'User Updated successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'User Updated successfully',
+    //   data: result,
+    // });
   },
 );
 
@@ -200,6 +201,7 @@ const getCurrentUser: RequestHandler = catchAsync(
 
     const result = await AuthServices.getCurrentUser(token);
 
+    res.json(result);
     // SET REFRESH TOKEN TO COOKIE
     // const cookieOptions = {
     //   secure: config.node_env === 'production',
@@ -210,12 +212,12 @@ const getCurrentUser: RequestHandler = catchAsync(
     // res.cookie('refresh_token', refreshToken, cookieOptions);
 
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'user Register successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'user Register successfully',
+    //   data: result,
+    // });
   },
 );
 

@@ -35,13 +35,15 @@ const getAllClientProducts: RequestHandler = catchAsync(
       paginationOptions,
     );
 
+    res.status(200).json(result);
+
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Product fetch successfully',
+    //   data: result,
+    // });
   },
 );
 // GET ALL
@@ -52,13 +54,14 @@ const getAllProducts: RequestHandler = catchAsync(
 
     const result = await ProductServices.getAllProducts();
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Product fetch successfully',
+    //   data: result,
+    // });
   },
 );
 // GET BY ID
@@ -70,13 +73,14 @@ const getProductById: RequestHandler = catchAsync(
 
     const result = await ProductServices.getProductById(id);
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Product fetch successfully',
+    //   data: result,
+    // });
   },
 );
 // GET PRODUCT BY CATEGORY ID
@@ -85,35 +89,43 @@ const getProductByCategoryID: RequestHandler = catchAsync(
     // const filters = pick(req.query, productFilterableFields);
     // const paginationOptions = pick(req.query, paginationFields);
     const { id } = req.params;
+    const { limit, skip } = req.query;
 
-    const result = await ProductServices.getProductByCategoryID(id, req.params);
-
-    // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      data: result,
+    const result = await ProductServices.getProductByCategoryID(id, {
+      limit,
+      skip,
     });
+
+    res.status(200).json(result);
+    // SEND RESPONSE
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Product fetch successfully',
+    //   data: result,
+    // });
   },
 );
 
 //   GET RANDOM PRODUCT
 const getRandomProduct: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    // const { id } = req.params;
+    const filters = pick(req.query, productFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
 
-    const result = await ProductServices.getRandomProduct(req.params);
+    const result = await ProductServices.getRandomProduct(
+      filters,
+      paginationOptions,
+    );
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Product fetch successfully',
+    //   data: result,
+    // });
   },
 );
 //   GET PRODUCT BY PRICE RANGE
@@ -125,13 +137,14 @@ const getProductByPriceRange: RequestHandler = catchAsync(
 
     const result = await ProductServices.getProductByPriceRange();
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Product fetch successfully',
+    //   data: result,
+    // });
   },
 );
 

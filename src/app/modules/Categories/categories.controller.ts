@@ -31,13 +31,14 @@ const getAllCategories: RequestHandler = catchAsync(
 
     const result = await CategoryServices.getAllCategories();
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Category Fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Category Fetch successfully',
+    //   data: result,
+    // });
   },
 );
 

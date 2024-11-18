@@ -37,17 +37,18 @@ const getAllMessages: RequestHandler = catchAsync(
       paginationOptions,
     );
 
+    res.status(200).json(result);
     // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Message fetch successfully',
-      data: result,
-    });
+    // sendResponse<any>(res, {
+    //   statusCode: httpStatus.OK,
+    //   success: true,
+    //   message: 'Message fetch successfully',
+    //   data: result,
+    // });
   },
 );
 
-// UPDATE
+// DELETE
 const deleteMessage: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     // const filters = pick(req.query, productFilterableFields);
@@ -60,7 +61,7 @@ const deleteMessage: RequestHandler = catchAsync(
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'Message Created successfully',
+      message: 'Message Deleted successfully',
       data: result,
     });
   },

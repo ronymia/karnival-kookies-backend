@@ -1,8 +1,6 @@
-import { paginationHelpers } from '../../../helpers/paginationHelpers';
-import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
 
-//CREATE
+// CREATE
 const createDiscount = async (payload: any) => {
   const { code, discountType, discountAmount, minimumSpend } = payload;
   // Insert new category
@@ -31,19 +29,8 @@ const createDiscount = async (payload: any) => {
 };
 
 //GET ALL
-const getAllDiscounts = async (
-  filter: any,
-  paginationOptions: TPaginationOptions,
-) => {
-  const {
-    page,
-    limit: perPage,
-    skip,
-    sortBy,
-    sortOrder,
-  } = paginationHelpers.calculatePagination(paginationOptions);
-  const offset = (page - 1) * perPage;
-  // Fetch all categories
+const getAllDiscounts = async () => {
+  // Fetch all
   const [discounts] = await pool.query('SELECT * FROM discount');
   // Fetch total category count
   const [totalDiscountsResult] = (await pool.query(
@@ -52,19 +39,15 @@ const getAllDiscounts = async (
   const totalDiscounts = totalDiscountsResult[0].count;
   //SEND TO CONTROLLER
   return {
-    meta: {
-      page,
-      limit: perPage,
-      total: totalDiscounts,
-    },
     data: discounts,
+    total: totalDiscounts,
   };
 };
 
 //UPDATE
 const updateDiscount = async (payload: any) => {
   const { id, code, discountType, discountAmount, minimumSpend } = payload;
-  const result = await pool.query(
+  const [result] = (await pool.query(
     'UPDATE discount SET code = ?, discountType = ?, discountAmount = ?, minimumSpend = ? WHERE id = ?',
     [
       code,
@@ -73,7 +56,7 @@ const updateDiscount = async (payload: any) => {
       parseFloat(minimumSpend),
       id,
     ],
-  );
+  )) as any[];
 
   return result;
 };
