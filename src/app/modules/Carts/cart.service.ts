@@ -161,8 +161,7 @@ const checkOutByEmail = async (
   paginationOptions: TPaginationOptions,
   email: string,
 ) => {
-  const { page, limit: perPage } =
-    paginationHelpers.calculatePagination(paginationOptions);
+  const { page = 1, perPage = 10 } = paginationOptions;
 
   const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
     email,
@@ -175,15 +174,12 @@ const checkOutByEmail = async (
   }
 
   //
-  // const page = parseInt(req.query.page) || 1; // Default to page 1
-  // const perPage = parseInt(req.query.perPage) || 20; // Default to 10 items per page
-  const offset = (page - 1) * perPage;
+  const offset = (Number(page) - 1) * Number(perPage);
 
-  //
   // Get paginated and ordered checkout items
   const [checkoutItems] = (await pool.query(
     'SELECT * FROM checkout WHERE userEmail = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?',
-    [email, perPage, offset],
+    [email, Number(perPage), offset],
   )) as any[];
 
   const parsedCheckouts = checkoutItems.map((checkout: any) => {
