@@ -64,7 +64,7 @@ const loginUser: RequestHandler = catchAsync(
     const cookieOptions = {
       secure: config.node_env === 'production',
       httpOnly: true,
-      sameSite: 'none',
+      // sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
     res.cookie('refresh_token', refreshToken, cookieOptions);
