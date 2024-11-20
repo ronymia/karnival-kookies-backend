@@ -2,8 +2,25 @@ import express from 'express';
 import { AuthControllers } from './auth.controller';
 import { AuthValidations } from './auth.validation';
 import validateRequest from '../../middlewares/validateRequest';
+import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
+import config from '../../../config';
 
 const router = express.Router();
+
+router.post('/jwt', async (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, config.jwt.access_token as Secret, {
+    expiresIn: '7d',
+  });
+  res
+    .cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+    .json({ success: true });
+});
 
 /***************
  * @api {post} /products
@@ -61,6 +78,6 @@ router.post('/is-user-exist', AuthControllers.sendPasswordCode);
 router.put('/user/verify/:email', AuthControllers.verifyUserMail);
 
 // CURRENT USER
-router.put('/user/info', AuthControllers.getCurrentUser);
+router.get('/user/info', AuthControllers.getCurrentUser);
 
 export const AuthRoutes = router;

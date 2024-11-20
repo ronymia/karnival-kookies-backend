@@ -59,9 +59,9 @@ const getAllClientProducts = async (
   paginationOptions: TPaginationOptions,
 ) => {
   const { category, fromPrice, toPrice, sortByNewest } = filter;
-  const { page = 1, perPage = 10 } = paginationOptions;
+  const { page = 1, perPage = 10, sortBy, sortOrder } = paginationOptions;
 
-  const offset = (page - 1) * perPage;
+  const offset = (Number(page) - 1) * Number(perPage);
 
   // Base query for products
   let query =
@@ -99,7 +99,7 @@ const getAllClientProducts = async (
 
   // Add pagination to the query
   query += ' LIMIT ? OFFSET ?';
-  params.push(perPage, offset);
+  params.push(Number(perPage), offset);
 
   // Execute query to get paginated products
   const [products] = (await pool.query(query, params)) as any[];
@@ -139,7 +139,7 @@ const getAllClientProducts = async (
     total: totalProducts,
     page,
     perPage,
-    totalPages: Math.ceil(totalProducts / perPage),
+    totalPages: Math.ceil(totalProducts / Number(perPage)),
   };
 };
 
@@ -244,7 +244,7 @@ const getRandomProduct = async (
 ) => {
   const { searchKey = '' } = filters;
   const { page = 1, perPage = 8 } = paginationOptions;
-  const offset = (page - 1) * perPage;
+  const offset = (Number(page) - 1) * Number(perPage);
   let query = `SELECT * FROM product `;
   const queryParams = [];
 
@@ -260,7 +260,7 @@ const getRandomProduct = async (
   }
 
   query += `ORDER BY RAND() LIMIT ? OFFSET ?`;
-  queryParams.push(parseInt(perPage), offset);
+  queryParams.push(Number(perPage), offset);
 
   // Fetch paginated products
   const [products] = (await pool.query(query, queryParams)) as any[];
@@ -294,28 +294,37 @@ const getRandomProduct = async (
         };
       }
     }),
-    page: parseInt(page),
-    perPage: parseInt(perPage),
+    page: Number(page),
+    perPage: Number(perPage),
     total: totalProducts,
   };
 };
 
 //  GET PRODUCT BY PRICE RANGE
 const getProductByPriceRange = async () => {
-  // Get the most expensive product
-  const [mostExpensiveProduct] = (await pool.query(
-    'SELECT * FROM product ORDER BY regularPrice DESC LIMIT 1',
-  )) as any[];
+  try {
+    // Get the most expensive product
+    const [mostExpensiveProduct] = (await pool.query(
+      'SELECT * FROM product ORDER BY regularPrice DESC LIMIT 1',
+    )) as any[];
 
-  // Get the cheapest product
-  const [cheapestProduct] = (await pool.query(
-    'SELECT * FROM product ORDER BY regularPrice ASC LIMIT 1',
-  )) as any[];
+    // Get the cheapest product
+    const [cheapestProduct] = (await pool.query(
+      'SELECT * FROM product ORDER BY regularPrice ASC LIMIT 1',
+    )) as any[];
 
-  return {
-    mostExpensiveProduct: mostExpensiveProduct[0],
-    cheapestProduct: cheapestProduct[0],
-  };
+    if (!mostExpensiveProduct[0] || !cheapestProduct[0]) {
+      throw new Error('No products found in the database.');
+    }
+
+    return {
+      mostExpensiveProduct: mostExpensiveProduct[0],
+      cheapestProduct: cheapestProduct[0],
+    };
+  } catch (error) {
+    console.error('Error fetching product price range:', error);
+    throw error; // Re-throw to handle it higher up
+  }
 };
 
 // UPLOAD PRODUCT IMAGES

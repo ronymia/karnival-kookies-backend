@@ -64,10 +64,12 @@ const loginUser: RequestHandler = catchAsync(
     const cookieOptions = {
       secure: config.node_env === 'production',
       httpOnly: true,
-      // sameSite: 'none',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
     res.cookie('refresh_token', refreshToken, cookieOptions);
+
+    // console.log({ refreshToken });
 
     //
     sendResponse<any>(res, {
@@ -198,6 +200,7 @@ const verifyUserMail: RequestHandler = catchAsync(
 const getCurrentUser: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const token = req.cookies.token;
+    console.log({ refresh_token: req });
 
     const result = await AuthServices.getCurrentUser(token);
 

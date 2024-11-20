@@ -132,6 +132,7 @@ const loginUser = async (payload: TLoginUser) => {
     config.jwt.refresh_token as Secret,
     config.jwt.refresh_token_expires_in as string,
   );
+
   return {
     accessToken,
     refreshToken,
@@ -274,6 +275,7 @@ const verifyUserMail = async (payload: any, email: string, otp: any) => {
 
 // GET CURRENT USER
 const getCurrentUser = async (token: Secret) => {
+  console.log({ token });
   try {
     const decoded = jwt.verify(
       token as string,
