@@ -10,7 +10,7 @@ const app: Application = express();
 
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'https://pastry-shop-client.vercel.app'],
+    origin: ['http://localhost:3000', 'https://pastry-shop-beta.netlify.app'],
     credentials: true,
   }),
 );
