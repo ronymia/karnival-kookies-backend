@@ -67,9 +67,9 @@ const getAllClientProducts = async (
   let query =
     'SELECT *, COALESCE(discountPrice, regularPrice) AS effectivePrice FROM product';
   const params: (string | number)[] = [];
-
-  // Conditions for filtering
   const conditions: string[] = [];
+
+  // Filter conditions
   if (category) {
     conditions.push('category = ?');
     params.push(category);
@@ -85,19 +85,29 @@ const getAllClientProducts = async (
     params.push(parseFloat(toPrice));
   }
 
-  // Append conditions to the query
+  // Append WHERE conditions if any
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
   }
 
-  // Sort products
+  // Sorting logic
+  let orderBy = '';
   if (sortByNewest) {
-    query += ' ORDER BY createdAt DESC';
+    orderBy = 'createdAt DESC';
   } else if (sortBy) {
-    query += ` ORDER BY ${sortBy} ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
+    orderBy = `${sortBy} ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
+  } else if (sortOrder === 'highToLow') {
+    orderBy = 'COALESCE(discountPrice, regularPrice) DESC';
+  } else if (sortOrder === 'lowToHigh') {
+    orderBy = 'COALESCE(discountPrice, regularPrice) ASC';
   }
 
-  // Add pagination to the query
+  // Add sorting to query if applicable
+  if (orderBy) {
+    query += ` ORDER BY ${orderBy}`;
+  }
+
+  // Pagination (LIMIT and OFFSET)
   query += ' LIMIT ? OFFSET ?';
   params.push(Number(perPage), offset);
 
@@ -117,29 +127,41 @@ const getAllClientProducts = async (
   )) as any[];
   const totalProducts = totalProductsResult[0].count;
 
+  // PARSE PRODUCT IMAGES
+  const parseProductImages = products.map((product: any) => {
+    let images;
+    try {
+      images = JSON.parse(product.images);
+    } catch (error) {
+      console.error(
+        'JSON parsing error for product images:',
+        product.images,
+        error,
+      );
+      images = product.images; // Use the original string if parsing fails
+    }
+    return {
+      ...product,
+      images,
+    };
+  });
+
   // Parse products and send the response
+  // return {
+  //   data: parseProductImages,
+  //   total: totalProducts,
+  //   page,
+  //   perPage,
+  //   totalPages: Math.ceil(totalProducts / Number(perPage)),
+  // };
   return {
-    data: products.map((product: any) => {
-      let images;
-      try {
-        images = JSON.parse(product.images);
-      } catch (error) {
-        console.error(
-          'JSON parsing error for product images:',
-          product.images,
-          error,
-        );
-        images = product.images; // Use the original string if parsing fails
-      }
-      return {
-        ...product,
-        images,
-      };
-    }),
-    total: totalProducts,
-    page,
-    perPage,
-    totalPages: Math.ceil(totalProducts / Number(perPage)),
+    meta: {
+      page,
+      perPage,
+      total: totalProducts,
+      totalPage: Math.ceil(totalProducts / Number(perPage)),
+    },
+    data: parseProductImages,
   };
 };
 
@@ -329,10 +351,12 @@ const getProductByPriceRange = async () => {
 
 // UPLOAD PRODUCT IMAGES
 const uploadProductImage = async (files: any) => {
+  // Ensure 'files' is an array before mapping
   const docs = files?.map((file: any) => ({
-    file: file?.filename,
-    id: file?.originalname,
+    file: file?.filename, // The filename saved on the server
+    id: file?.originalname, // The original name of the file uploaded
   }));
+
   return docs;
 };
 

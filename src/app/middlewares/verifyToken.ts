@@ -20,32 +20,33 @@ import httpStatus from 'http-status';
 //   }
 // };
 
-const verifyToken =
-  () => async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      //get authorization token
-      const token = req.headers.authorization;
-      if (!token) {
-        throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
-      }
-      // verify token
-      let verifiedUser = null;
-
-      verifiedUser = JwtHelpers.verifyToken(
-        token,
-        config.jwt.access_token as Secret,
-      );
-
-      req.user = verifiedUser; // role  , userId
-
-      // // role based guard
-      // if (requiredRoles.length && !requiredRoles.includes(verifiedUser.role)) {
-      //   throw new AppError(httpStatus.FORBIDDEN, 'Forbidden');
-      // }
-      next();
-    } catch (error) {
-      next(error);
+const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    //get authorization token
+    // const token = req.headers.authorization?.split(' ')[1];
+    const token = req?.cookies?.token;
+    // console.log({ first: token, second: req.cookies.token });
+    if (!token) {
+      throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
     }
-  };
+    // verify token
+    let verifiedUser = null;
+
+    verifiedUser = JwtHelpers.verifyToken(
+      token,
+      config.jwt.access_token as Secret,
+    );
+
+    req.user = verifiedUser; // role  , userId
+
+    // // role based guard
+    // if (requiredRoles.length && !requiredRoles.includes(verifiedUser.role)) {
+    //   throw new AppError(httpStatus.FORBIDDEN, 'Forbidden');
+    // }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 export default verifyToken;

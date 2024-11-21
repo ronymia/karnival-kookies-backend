@@ -4,4 +4,6 @@ export const productFilterableFields = [
   'fromPrice',
   'toPrice',
   'sortByNewest',
+  'lowToHigh',
+  'HighToLow',
 ];

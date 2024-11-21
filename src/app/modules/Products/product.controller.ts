@@ -151,19 +151,13 @@ const getProductByPriceRange: RequestHandler = catchAsync(
 // UPLOAD PRODUCT IMAGES
 const uploadProductImage: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    // const { id } = req.params;
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
 
     const result = await ProductServices.uploadProductImage(req.files);
 
-    // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      data: result,
-    });
+    res.status(200).json(result);
   },
 );
 

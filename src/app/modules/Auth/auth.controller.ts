@@ -60,24 +60,23 @@ const loginUser: RequestHandler = catchAsync(
 
     const { refreshToken, ...result } = await AuthServices.loginUser(loginData);
 
-    // SET REFRESH TOKEN TO COOKIE
-    const cookieOptions = {
-      secure: config.node_env === 'production',
-      httpOnly: true,
-      // sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    };
-    res.cookie('refresh_token', refreshToken, cookieOptions);
-
     // console.log({ refreshToken });
 
-    //
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'user login successfully',
-      data: result,
-    });
+    // Set the refresh token to cookie
+    res
+      .cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies only in production
+        sameSite: 'none', // Required for cross-origin cookies
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      })
+      .status(httpStatus.OK)
+      .json({
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'User logged in successfully',
+        data: result,
+      });
   },
 );
 
@@ -200,7 +199,7 @@ const verifyUserMail: RequestHandler = catchAsync(
 const getCurrentUser: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const token = req.cookies.token;
-    console.log({ refresh_token: req });
+    // console.log({ refresh_token: req });
 
     const result = await AuthServices.getCurrentUser(token);
 

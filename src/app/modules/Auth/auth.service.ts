@@ -299,6 +299,7 @@ const getCurrentUser = async (token: Secret) => {
           name: result.name,
           phone: result.phone,
           email: result.email,
+          token,
           isVerified: result.isVerified,
           createdAt: result.createdAt,
           updatedAt: result.updatedAt,

@@ -10,7 +10,7 @@ const router = express.Router();
 router.post('/jwt', async (req, res) => {
   const user = req.body;
   const token = jwt.sign(user, config.jwt.access_token as Secret, {
-    expiresIn: '7d',
+    expiresIn: config.jwt.access_token_expires_in,
   });
   res
     .cookie('token', token, {
