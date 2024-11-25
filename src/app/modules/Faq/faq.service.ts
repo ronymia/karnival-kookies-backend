@@ -38,11 +38,11 @@ const getAllFaq = async () => {
 
 //UPDATE
 const updateFaq = async (payload: any) => {
-  const { id, question, answer, createdAt } = payload;
+  const { id, question, answer } = payload;
 
   const result = await pool.query(
-    'UPDATE faq SET question = ?, answer = ?, createdAt = ?, updatedAt = ? WHERE id = ?',
-    [question, answer, createdAt, new Date(), id],
+    'UPDATE faq SET question = ?, answer = ?,  updatedAt = ? WHERE id = ?',
+    [question, answer, new Date(), id],
   );
 
   return result;

@@ -41,11 +41,11 @@ const getCategoryById = async () => {};
 
 // UPDATE
 const updateCategory = async (payload: TCreateCategoryType) => {
-  const { id, name, description, createdAt } = payload;
+  const { id, name, description } = payload;
   // Update the category
   const [result] = (await pool.query(
-    'UPDATE category SET name = ?, description = ?, createdAt = ?, updatedAt = ? WHERE id = ?',
-    [name, description, createdAt, new Date(), id],
+    'UPDATE category SET name = ?, description = ?,  updatedAt = ? WHERE id = ?',
+    [name, description, new Date(), id],
   )) as any[];
 
   return result;

@@ -83,7 +83,7 @@ const refreshToken: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const refresh_token = req.cookies;
 
-    const result = await AuthServices.refreshToken();
+    const result = await AuthServices.refreshToken(refresh_token);
 
     // SET REFRESH TOKEN TO COOKIE
     const cookieOptions = {

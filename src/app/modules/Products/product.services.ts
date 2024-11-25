@@ -369,11 +369,10 @@ const updateProduct = async (payload: any) => {
     images,
     category,
     inStock,
-    createdAt,
   } = payload;
 
   const [result] = await pool.query(
-    'UPDATE product SET name = ?, description = ?, regularPrice = ?, discountPrice = ?, images = ?, category = ?, inStock = ?, createdAt = ?, updatedAt = ? WHERE id = ?',
+    'UPDATE product SET name = ?, description = ?, regularPrice = ?, discountPrice = ?, images = ?, category = ?, inStock = ?, updatedAt = ? WHERE id = ?',
     [
       name,
       description,
@@ -382,7 +381,6 @@ const updateProduct = async (payload: any) => {
       JSON.stringify(images),
       category,
       inStock,
-      createdAt,
       new Date(),
       id,
     ],
