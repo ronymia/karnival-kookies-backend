@@ -1,6 +1,8 @@
 import { Request, RequestHandler, Response } from 'express';
 import catchAsync from '../../../shared/catchAsync';
 import { DashboardServices } from './dashboard.service';
+import sendResponse from '../../../shared/sendResponse';
+import httpStatus from 'http-status';
 
 // GET ADMIN DASHBOARD DATA
 const adminDashboard: RequestHandler = catchAsync(
@@ -30,14 +32,13 @@ const userDashboard: RequestHandler = catchAsync(
 
     const result = await DashboardServices.userDashboard(email);
 
-    res.json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'User Dashboard Data fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'User Dashboard Data fetch successfully',
+      data: result,
+    });
   },
 );
 

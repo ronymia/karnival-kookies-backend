@@ -1,8 +1,8 @@
 // CODE GENERATOR
-export const generateCode = (): number => {
+export const generateCode = (): string => {
   const code = Math.floor(Math.random() * 10000);
   if (code < 1000) {
-    return generateCode();
+    return generateCode().toString();
   }
-  return code;
+  return code.toString();
 };

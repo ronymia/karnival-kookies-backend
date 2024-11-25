@@ -9,6 +9,7 @@ import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import { NextFunction, Request, Response } from 'express';
+import bcrypt from 'bcrypt';
 
 // USER REGISTER FUNCTION
 const registerUser = async (payload: TRegisterUser) => {
@@ -46,15 +47,15 @@ const registerUser = async (payload: TRegisterUser) => {
   // const role = 'user';
 
   // Create JWT tokens
-  const { id: userId, role } = result;
+  const { email: userEmail, role } = result;
 
   const accessToken = JwtHelpers.createToken(
-    { userId, role },
+    { userEmail, role },
     config.jwt.access_token as Secret,
     config.jwt.access_token_expires_in as string,
   );
   const refreshToken = JwtHelpers.createToken(
-    { id: userId, role },
+    { id: userEmail, role },
     config.jwt.refresh_token as Secret,
     config.jwt.refresh_token_expires_in as string,
   );
@@ -62,7 +63,7 @@ const registerUser = async (payload: TRegisterUser) => {
   return {
     accessToken,
     refreshToken,
-    user: { id: userId, name, email, role, phone },
+    user: { id: result?.id, name, email, role, phone },
   };
 };
 
@@ -85,21 +86,53 @@ const loginUser = async (payload: TLoginUser) => {
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not Found');
   }
+
+  // CHECK PASSWORD
+  const isPasswordMatch =
+    user.password &&
+    (await PasswordHelpers.passwordMatch(password, user.password));
+  if (!isPasswordMatch) {
+    throw new AppError(httpStatus.UNAUTHORIZED, ' Password incorrect');
+  }
+
   // IF USER UNVERIFIED
-  // if (user && !user?.isVerified) {
-  //   const salt = await bcrypt.genSalt(12);
-  //   const hashedCode = await bcrypt.hash(code, salt);
-  //   await pool.query('UPDATE users SET code = ? WHERE email = ?', [
-  //     hashedCode,
-  //     user?.email,
-  //   ]);
-  //   await verifyUserMail(user?.name, user?.email, code);
-  //   return res.json({
-  //     need_to_verify: true,
-  //     message: 'Code sent',
-  //     email: user?.email,
-  //   });
-  // }
+  if (user && !user?.isVerified) {
+    // EMAIL VERIFICATION CODE
+    const verificationCode = generateCode();
+    // const salt = await bcrypt.genSalt(12);
+    // const hashedCode = await bcrypt.hash(verificationCode, salt);
+    const hashedCode = PasswordHelpers.passwordHash(verificationCode);
+
+    await pool.query('UPDATE users SET code = ? WHERE email = ?', [
+      hashedCode,
+      user?.email,
+    ]);
+
+    //  SEND VERIFICATION CODE INTO MAIL
+    await EmailHelpers.verifyUserMail(
+      user?.name,
+      user?.email,
+      verificationCode,
+    );
+
+    //
+    return {
+      accessToken: null,
+      refreshToken: null,
+      user: {
+        id: user?.id,
+        need_to_verify: true,
+        message: 'Code sent',
+        role: user?.role,
+        name: user?.name,
+        phone: user?.phone,
+        email: user?.email,
+        isVerified: user?.isVerified,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt,
+      },
+    };
+  }
   // IF USER VERIFIED
   // if (user?.isVerified) {
   //   return {
@@ -113,22 +146,16 @@ const loginUser = async (payload: TLoginUser) => {
   //     updatedAt: user?.updatedAt,
   //   };
   // }
-  // check password
-  const isPasswordMatch =
-    user.password &&
-    (await PasswordHelpers.passwordMatch(password, user.password));
-  if (!isPasswordMatch) {
-    throw new AppError(httpStatus.UNAUTHORIZED, ' Password incorrect');
-  }
+
   // create JWT token and refresh token
-  const { id: userId, role } = user;
+  const { email: userEmail, role } = user;
   const accessToken = JwtHelpers.createToken(
-    { userId, role },
+    { userEmail, role },
     config.jwt.access_token as Secret,
     config.jwt.access_token_expires_in as string,
   );
   const refreshToken = JwtHelpers.createToken(
-    { userId, role },
+    { userEmail, role },
     config.jwt.refresh_token as Secret,
     config.jwt.refresh_token_expires_in as string,
   );
@@ -149,7 +176,53 @@ const loginUser = async (payload: TLoginUser) => {
   };
 };
 
-const refreshToken = async () => {};
+const refreshToken = async (token: string) => {
+  // Invalid token - synchronous
+  let verifiedToken = null;
+  try {
+    verifiedToken = JwtHelpers.verifyToken(
+      token,
+      config.jwt.refresh_token as Secret,
+    );
+  } catch (err: any) {
+    // Log the error for debugging purposes
+    console.error('JWT verification error:', err);
+
+    // Differentiate between token expiration and other errors
+    if (err.name === 'TokenExpiredError') {
+      throw new AppError(httpStatus.UNAUTHORIZED, 'JWT token has expired');
+    } else if (err.name === 'JsonWebTokenError') {
+      throw new AppError(httpStatus.FORBIDDEN, 'Invalid JWT token');
+    } else {
+      throw new AppError(httpStatus.FORBIDDEN, 'Could not verify JWT token');
+    }
+  }
+
+  const { userEmail } = verifiedToken;
+
+  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
+    userEmail,
+  ])) as any[];
+
+  const isUserExist = rows[0];
+  if (!isUserExist) {
+    throw new AppError(httpStatus.NOT_FOUND, ' User not found');
+  }
+  //generate new token
+
+  const newAccessToken = JwtHelpers.createToken(
+    {
+      userEmail: isUserExist.email,
+      role: isUserExist.role,
+    },
+    config.jwt.access_token as Secret,
+    config.jwt.access_token_expires_in as string,
+  );
+
+  return {
+    accessToken: newAccessToken,
+  };
+};
 
 // PASSWORD RESET
 const resetPassword = async (email: string, password: string) => {
@@ -279,7 +352,7 @@ const getCurrentUser = async (token: Secret) => {
   try {
     const decoded = jwt.verify(
       token as string,
-      config.jwt.access_token as string,
+      config.jwt.refresh_token as string,
     ) as JwtPayload | null;
 
     if (!decoded || typeof decoded === 'string' || !decoded.email) {

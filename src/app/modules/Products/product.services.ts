@@ -1,13 +1,6 @@
 import { TPaginationOptions } from '../../../interfaces/pagination';
+import { pool } from '../../../shared/mySQL';
 import { TProduct } from './product.interface';
-import mysql from 'mysql2/promise';
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-});
 
 // CREATE PRODUCT
 const createProduct = async (payload: TProduct) => {
@@ -146,14 +139,6 @@ const getAllClientProducts = async (
     };
   });
 
-  // Parse products and send the response
-  // return {
-  //   data: parseProductImages,
-  //   total: totalProducts,
-  //   page,
-  //   perPage,
-  //   totalPages: Math.ceil(totalProducts / Number(perPage)),
-  // };
   return {
     meta: {
       page,
@@ -294,31 +279,44 @@ const getRandomProduct = async (
   )) as any[];
   const totalProducts = totalProductsResult[0].count;
 
+  // PARSE PRODUCT IMAGES JSON TO JS
+  const parseProductImages = products?.map((product: any) => {
+    try {
+      const parsedImages = JSON.parse(product.images);
+      return {
+        ...product,
+        images: parsedImages,
+      };
+    } catch (error) {
+      console.error(
+        'JSON parsing error for product images:',
+        product.images,
+        error,
+      );
+      return {
+        ...product,
+        images: product.images, // Return the original string if parsing fails
+      };
+    }
+  });
+
   // Process and send response
+  // return {
+
+  //   success: true,
+  //   data: productImages,
+  //   page: Number(page),
+  //   perPage: Number(perPage),
+  //   total: totalProducts,
+  // };
   return {
-    success: true,
-    data: products?.map((product: any) => {
-      try {
-        const parsedImages = JSON.parse(product.images);
-        return {
-          ...product,
-          images: parsedImages,
-        };
-      } catch (error) {
-        console.error(
-          'JSON parsing error for product images:',
-          product.images,
-          error,
-        );
-        return {
-          ...product,
-          images: product.images, // Return the original string if parsing fails
-        };
-      }
-    }),
-    page: Number(page),
-    perPage: Number(perPage),
-    total: totalProducts,
+    meta: {
+      page: Number(page),
+      perPage: Number(perPage),
+      total: totalProducts,
+      totalPage: Math.ceil(totalProducts / Number(perPage)),
+    },
+    data: parseProductImages,
   };
 };
 

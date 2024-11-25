@@ -5,26 +5,11 @@ import { Secret } from 'jsonwebtoken';
 import { JwtHelpers } from '../../helpers/jwtHelpers';
 import httpStatus from 'http-status';
 
-// const verifyToken = async (req, res, next) => {
-//   const token = req?.cookies?.token;
-//   if (!token) {
-//     return res.status(401).send({ message: 'Unauthorized access no token' });
-//   } else {
-//     jwt.verify(token, process.env.ACCESS_TOKEN, (err, user) => {
-//       if (err) {
-//         return res.status(401).send({ message: 'Unauthorized access error' });
-//       }
-//       req.user = user;
-//       next();
-//     });
-//   }
-// };
-
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     //get authorization token
     // const token = req.headers.authorization?.split(' ')[1];
-    const token = req?.cookies?.token;
+    const token = req?.cookies?.refresh_token;
     // console.log({ first: token, second: req.cookies.token });
     if (!token) {
       throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
@@ -34,7 +19,7 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
 
     verifiedUser = JwtHelpers.verifyToken(
       token,
-      config.jwt.access_token as Secret,
+      config.jwt.refresh_token as Secret,
     );
 
     req.user = verifiedUser; // role  , userId

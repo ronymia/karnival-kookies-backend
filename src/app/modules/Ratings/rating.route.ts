@@ -29,7 +29,7 @@ const router = express.Router();
 router.post(
   '/',
   verifyToken,
-  validateRequest(RatingValidations.createSchema),
+  // validateRequest(RatingValidations.createSchema),
   RatingControllers.createRating,
 );
 

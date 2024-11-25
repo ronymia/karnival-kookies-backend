@@ -33,6 +33,13 @@ router.post(
   validateRequest(DiscountValidations.createSchema),
   DiscountControllers.createDiscount,
 );
+// router.post(
+//   '/',
+//   verifyToken,
+//   verifyAdmin,
+//   validateRequest(DiscountValidations.createSchema),
+//   DiscountControllers.createDiscount,
+// );
 
 //  GET ALL
 router.get('/', verifyToken, DiscountControllers.getAllDiscounts);
@@ -42,7 +49,7 @@ router.put(
   '/',
   verifyToken,
   verifyAdmin,
-  //   validateRequest(DiscountValidations.updateSchema),
+  validateRequest(DiscountValidations.updateSchema),
   DiscountControllers.updateDiscount,
 );
 

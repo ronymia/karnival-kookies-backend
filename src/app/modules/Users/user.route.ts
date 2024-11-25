@@ -24,9 +24,9 @@ const router = express.Router();
  *********************/
 
 //  GET ALL USER
-router.get('/users/all', verifyToken, verifyAdmin, UserControllers.getAllUsers);
+router.get('/all', verifyToken, verifyAdmin, UserControllers.getAllUsers);
 
 // UPDATE USER
-router.put('/user/:email', verifyToken, UserControllers.updateUser);
+router.put('/:email', verifyToken, UserControllers.updateUser);
 
 export const UserRoutes = router;

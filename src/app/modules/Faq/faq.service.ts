@@ -49,7 +49,7 @@ const updateFaq = async (payload: any) => {
 };
 
 //DELETE
-const deleteFaq = async (id: any) => {
+const deleteFaq = async (id: number) => {
   const result = await pool.query('DELETE FROM faq WHERE id = ?', [Number(id)]);
   return result;
 };

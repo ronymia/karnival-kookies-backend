@@ -35,15 +35,16 @@ const getAllClientProducts: RequestHandler = catchAsync(
       paginationOptions,
     );
 
-    res.status(200).json(result);
+    // res.status(200).json(result);
 
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Product fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Product fetch successfully',
+      meta: result.meta,
+      data: result.data,
+    });
   },
 );
 // GET ALL
@@ -118,14 +119,14 @@ const getRandomProduct: RequestHandler = catchAsync(
       paginationOptions,
     );
 
-    res.status(200).json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Product fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Product fetch successfully',
+      meta: result.meta,
+      data: result.data,
+    });
   },
 );
 //   GET PRODUCT BY PRICE RANGE

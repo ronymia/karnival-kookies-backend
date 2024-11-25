@@ -11,11 +11,11 @@ const getAllUsers = async (
   const { page = 1, perPage = 20 } = paginationOptions;
 
   // Calculate offset
-  const offset = (page - 1) * perPage;
+  const offset = (Number(page) - 1) * Number(perPage);
 
   // Query to select users with limit and offset for pagination
   const [rows] = await pool.query('SELECT * FROM users LIMIT ? OFFSET ?', [
-    perPage,
+    Number(perPage),
     offset,
   ]);
 
@@ -24,15 +24,25 @@ const getAllUsers = async (
     'SELECT COUNT(*) as totalUsers FROM users',
   )) as any[];
   const totalUsers = countResult[0].totalUsers;
-  const totalPages = Math.ceil(totalUsers / perPage);
+  const totalPages = Math.ceil(totalUsers / Number(perPage));
 
   // Send paginated result and metadata
+  // return {
+  //   data: rows,
+  //   currentPage: page,
+  //   perPage: perPage,
+  //   totalPages: totalPages,
+  //   total: totalUsers,
+  // };
+
   return {
+    meta: {
+      page: Number(page),
+      perPage: Number(perPage),
+      total: totalUsers,
+      totalPage: Math.ceil(totalUsers / Number(perPage)),
+    },
     data: rows,
-    currentPage: page,
-    perPage: perPage,
-    totalPages: totalPages,
-    total: totalUsers,
   };
 };
 // UPDATE

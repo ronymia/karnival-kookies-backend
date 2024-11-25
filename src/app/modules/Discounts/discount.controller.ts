@@ -7,9 +7,8 @@ import httpStatus from 'http-status';
 // CREATE
 const createDiscount: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
     const { ...createData } = req.body;
+    console.log({ createData });
 
     const result = await DiscountServices.createDiscount(createData);
 

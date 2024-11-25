@@ -9,11 +9,11 @@ const router = express.Router();
 
 router.post('/jwt', async (req, res) => {
   const user = req.body;
-  const token = jwt.sign(user, config.jwt.access_token as Secret, {
-    expiresIn: config.jwt.access_token_expires_in,
+  const token = jwt.sign(user, config.jwt.refresh_token as Secret, {
+    expiresIn: config.jwt.refresh_token_expires_in,
   });
   res
-    .cookie('token', token, {
+    .cookie('refresh_token', token, {
       httpOnly: true,
       secure: true,
       sameSite: 'none',

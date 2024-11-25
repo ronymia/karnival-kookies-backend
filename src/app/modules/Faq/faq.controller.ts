@@ -63,11 +63,9 @@ const updateFaq: RequestHandler = catchAsync(
 // UPDATE
 const deleteFaq: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, faqFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { ...updateData } = req.body;
+    const { id } = req.params;
 
-    const result = await FaqServices.deleteFaq(updateData);
+    const result = await FaqServices.deleteFaq(Number(id));
 
     // SEND RESPONSE
     sendResponse<any>(res, {

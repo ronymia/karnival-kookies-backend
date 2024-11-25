@@ -15,14 +15,15 @@ const getAllUsers: RequestHandler = catchAsync(
 
     const result = await UserServices.getAllUsers(filters, paginationOptions);
 
-    res.json(result);
+    // res.json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Users fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Users fetch successfully',
+      meta: result.meta,
+      data: result.data,
+    });
   },
 );
 

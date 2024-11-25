@@ -32,6 +32,6 @@ router.get(
 );
 
 // USER
-router.put('/user/:email', verifyToken, DashboardControllers.userDashboard);
+router.get('/user/:email', verifyToken, DashboardControllers.userDashboard);
 
 export const DashboardRoutes = router;

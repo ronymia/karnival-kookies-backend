@@ -42,7 +42,7 @@ router.put(
   '/',
   verifyToken,
   verifyAdmin,
-  //   validateRequest(DiscountValidations.updateSchema),
+  validateRequest(FaqValidations.updateSchema),
   FaqControllers.updateFaq,
 );
 
