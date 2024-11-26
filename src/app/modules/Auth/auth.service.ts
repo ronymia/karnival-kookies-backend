@@ -129,7 +129,7 @@ const loginUser = async (payload: TLoginUser) => {
       verificationCode,
     );
 
-    //
+    // IF USER UNVERIFIED
     return {
       accessToken: null,
       refreshToken: null,
@@ -147,33 +147,19 @@ const loginUser = async (payload: TLoginUser) => {
       },
     };
   }
-  // IF USER VERIFIED
-  // if (user?.isVerified) {
-  //   return {
-  //     id: user?.id,
-  //     role: user?.role,
-  //     name: user?.name,
-  //     phone: user?.phone,
-  //     email: user?.email,
-  //     isVerified: user?.isVerified,
-  //     createdAt: user?.createdAt,
-  //     updatedAt: user?.updatedAt,
-  //   };
-  // }
 
   // create JWT token and refresh token
-  const { email: userEmail, role } = user;
   const accessToken = JwtHelpers.createToken(
-    { userEmail, role },
+    { email: user?.email, role: user?.role },
     config.jwt.access_token as Secret,
     config.jwt.access_token_expires_in as string,
   );
   const refreshToken = JwtHelpers.createToken(
-    { userEmail, role },
+    { email: user?.email, role: user?.role },
     config.jwt.refresh_token as Secret,
     config.jwt.refresh_token_expires_in as string,
   );
-
+  // IF USER VERIFIED
   return {
     accessToken,
     refreshToken,

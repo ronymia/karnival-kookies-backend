@@ -11,8 +11,6 @@ const verifyAdmin = async (req: Request, res: Response, next: NextFunction) => {
       email,
     ])) as any[];
 
-    //   console.log(rows);
-
     if (rows.length === 0 || rows[0].role !== 'admin') {
       throw new AppError(httpStatus.FORBIDDEN, 'You have no access');
     }
