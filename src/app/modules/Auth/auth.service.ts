@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
-import { TLoginUser, TRegisterUser } from './auth.interface';
+import { IRegisterUser, TLoginUser } from './auth.interface';
 import { JwtHelpers } from '../../../helpers/jwtHelpers';
 import config from '../../../config';
 import { PasswordHelpers } from '../../../helpers/passwordHelpers';
@@ -9,57 +9,71 @@ import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import { NextFunction, Request, Response } from 'express';
-import bcrypt from 'bcrypt';
 
 // USER REGISTER FUNCTION
-const registerUser = async (payload: TRegisterUser) => {
-  const { email, password, phone, name } = payload;
+const registerUser = async (payload: IRegisterUser) => {
+  // PAYLOAD EXTRACT
+  const { email, password, phone, name, role } = payload;
 
-  // Check if user already exists
+  // CHECKING USER EXISTENT
   const [accounts] = (await pool.query('SELECT * FROM users WHERE email = ?', [
     email,
   ])) as any[];
+
+  // IF EMAIL ALREADY REGISTER THEN THROW ERROR
   if (accounts.length > 0) {
     throw new AppError(httpStatus.CONFLICT, 'Account already registered');
   }
 
-  // Generate hashed password
-  // const hashedPassword = await bcrypt.hash(password, config.bcrypt_salt_rounds);
-  const verificationCode = generateCode();
+  // GENERATE 4 DIGIT EMAIL VERIFICATION CODE
+  const verificationCode = await generateCode();
+  const hashedVerificationCode =
+    await PasswordHelpers.passwordHash(verificationCode);
 
-  // Create new user
+  // CREATE NEW USER
   const [result] = (await pool.query(
     'INSERT INTO users (role, name, phone, email, password, code, isVerified, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
-      'user',
+      role,
       name,
       phone,
       email,
       password,
-      verificationCode,
+      hashedVerificationCode,
       false,
       new Date(),
       new Date(),
     ],
   )) as any[];
 
-  // const userId = result.insertId; // MySQL insert ID
-  // const role = 'user';
+  // IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL
+  if (result?.insertId) {
+    try {
+      await EmailHelpers.verifyUserMail(name, email, verificationCode);
+      return { message: 'Verification Code sent', email };
+    } catch (err) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to send verification email',
+      );
+    }
+  }
 
-  // Create JWT tokens
-  const { email: userEmail, role } = result;
-
+  // ACCESS TOKEN
   const accessToken = JwtHelpers.createToken(
-    { userEmail, role },
+    { email, role },
     config.jwt.access_token as Secret,
     config.jwt.access_token_expires_in as string,
   );
+
+  // REFRESH TOKEN
   const refreshToken = JwtHelpers.createToken(
-    { id: userEmail, role },
+    { email, role },
     config.jwt.refresh_token as Secret,
     config.jwt.refresh_token_expires_in as string,
   );
 
+  // RETURN TO CONTROLLER
   return {
     accessToken,
     refreshToken,

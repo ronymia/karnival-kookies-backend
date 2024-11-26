@@ -13,8 +13,6 @@ export default {
   db_database: process.env.DB_DATABASE,
   db_username: process.env.DB_USERNAME,
   db_password: process.env.DB_PASSWORD,
-  default_student_pass: process.env.DEFAULT_STUDENT_PASS,
-  default_faculty_pass: process.env.DEFAULT_FACULTY_PASS,
   default_admin_pass: process.env.DEFAULT_ADMIN_PASS,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
   node_email: process.env.NODE_EMAIL,

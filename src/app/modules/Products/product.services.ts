@@ -56,71 +56,67 @@ const getAllClientProducts = async (
 
   const offset = (Number(page) - 1) * Number(perPage);
 
-  // Base query for products
+  // Helper: Build filter conditions
+  const buildConditions = () => {
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+
+    if (category) {
+      conditions.push('category = ?');
+      params.push(category);
+    }
+    if (fromPrice) {
+      conditions.push('COALESCE(discountPrice, regularPrice) >= ?');
+      params.push(parseFloat(fromPrice));
+    }
+    if (toPrice) {
+      conditions.push('COALESCE(discountPrice, regularPrice) <= ?');
+      params.push(parseFloat(toPrice));
+    }
+
+    return { conditions, params };
+  };
+
+  // Helper: Build ORDER BY clause
+  const buildSorting = () => {
+    if (sortByNewest) {
+      return 'createdAt DESC';
+    } else if (sortBy) {
+      return `${sortBy} ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
+    } else if (sortOrder === 'highToLow') {
+      return 'COALESCE(discountPrice, regularPrice) DESC';
+    } else if (sortOrder === 'lowToHigh') {
+      return 'COALESCE(discountPrice, regularPrice) ASC';
+    }
+    return 'createdAt ASC'; // Default sorting
+  };
+
+  // Build query
+  const { conditions, params } = buildConditions();
   let query =
     'SELECT *, COALESCE(discountPrice, regularPrice) AS effectivePrice FROM product';
-  const params: (string | number)[] = [];
-  const conditions: string[] = [];
-
-  // Filter conditions
-  if (category) {
-    conditions.push('category = ?');
-    params.push(category);
-  }
-
-  if (fromPrice) {
-    conditions.push('COALESCE(discountPrice, regularPrice) >= ?');
-    params.push(parseFloat(fromPrice));
-  }
-
-  if (toPrice) {
-    conditions.push('COALESCE(discountPrice, regularPrice) <= ?');
-    params.push(parseFloat(toPrice));
-  }
-
-  // Append WHERE conditions if any
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
   }
-
-  // Sorting logic
-  let orderBy = '';
-  if (sortByNewest) {
-    orderBy = 'createdAt DESC';
-  } else if (sortBy) {
-    orderBy = `${sortBy} ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
-  } else if (sortOrder === 'highToLow') {
-    orderBy = 'COALESCE(discountPrice, regularPrice) DESC';
-  } else if (sortOrder === 'lowToHigh') {
-    orderBy = 'COALESCE(discountPrice, regularPrice) ASC';
-  }
-
-  // Add sorting to query if applicable
-  if (orderBy) {
-    query += ` ORDER BY ${orderBy}`;
-  }
-
-  // Pagination (LIMIT and OFFSET)
-  query += ' LIMIT ? OFFSET ?';
+  const orderBy = buildSorting();
+  query += ` ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
   params.push(Number(perPage), offset);
 
-  // Execute query to get paginated products
+  // Execute main query
   const [products] = (await pool.query(query, params)) as any[];
 
-  // Count query to get total product count with the same conditions
+  // Build and execute count query
   let countQuery = 'SELECT COUNT(*) as count FROM product';
   if (conditions.length > 0) {
     countQuery += ' WHERE ' + conditions.join(' AND ');
   }
-
-  // Execute count query (exclude LIMIT and OFFSET params)
   const [totalProductsResult] = (await pool.query(
     countQuery,
-    params.slice(0, -2),
+    params.slice(0, -2), // Exclude pagination params
   )) as any[];
   const totalProducts = totalProductsResult[0].count;
 
-  // PARSE PRODUCT IMAGES
+  // Parse product images
   const parseProductImages = products.map((product: any) => {
     let images;
     try {
@@ -131,7 +127,7 @@ const getAllClientProducts = async (
         product.images,
         error,
       );
-      images = product.images; // Use the original string if parsing fails
+      images = product.images; // Fallback to original string
     }
     return {
       ...product,
@@ -139,6 +135,7 @@ const getAllClientProducts = async (
     };
   });
 
+  // Return paginated response
   return {
     meta: {
       page,

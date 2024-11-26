@@ -19,13 +19,15 @@ export type TLoginUserResponse = {
   updatedAt?: string;
 };
 
-export type TRegisterUser = {
-  role?: 'user' | 'admin';
-  name: string;
-  phone?: string;
+export interface IRegisterUser {
+  id: number;
   email: string;
   password: string;
-};
+  name: string;
+  phone: string;
+  role: string;
+  isVerified: boolean;
+}
 
 export type TRefreshTokenResponse = {
   access_token: string;
