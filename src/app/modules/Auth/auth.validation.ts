@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { userRole } from '../../../constants/user';
 
 const loginZodSchema = z.object({
   body: z.object({
@@ -15,6 +16,7 @@ const registerZodSchema = z.object({
       .string({ required_error: 'Email is required' })
       .email({ message: 'Please Provide Valid Email Address' }),
     password: z.string({ required_error: 'Password is required' }),
+    role: z.enum([...userRole] as [string, ...string[]]),
   }),
 });
 const refreshTokenZodSchema = z.object({
