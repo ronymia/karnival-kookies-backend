@@ -11,6 +11,7 @@ import { RatingRoutes } from '../modules/Ratings/rating.route';
 import { MessageRoutes } from '../modules/Messages/message.route';
 import { ProductRoutes } from '../modules/Products/product.route';
 import { PackageRoutes } from '../modules/Package/package.route';
+import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
 
 const router = express.Router();
 
@@ -67,6 +68,10 @@ const moduleRoutes = [
   {
     path: '/packages',
     route: PackageRoutes,
+  },
+  {
+    path: '/subscribers',
+    route: SubscribersRoutes,
   },
 ];
 

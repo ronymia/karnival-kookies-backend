@@ -9,6 +9,7 @@ import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import { NextFunction, Request, Response } from 'express';
+import { ENUM_USER_ROLE } from '../../../enums/user';
 
 // USER REGISTER FUNCTION
 const registerUser = async (payload: IRegisterUser) => {
@@ -40,14 +41,14 @@ const registerUser = async (payload: IRegisterUser) => {
       email,
       password,
       hashedVerificationCode,
-      false,
+      role === ENUM_USER_ROLE.customer ? false : true,
       new Date(),
       new Date(),
     ],
   )) as any[];
 
   // IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL
-  if (result?.insertId) {
+  if (result?.insertId && role === ENUM_USER_ROLE.customer) {
     try {
       await EmailHelpers.verifyUserMail(name, email, verificationCode);
       return { message: 'Verification Code sent', email };
@@ -59,6 +60,9 @@ const registerUser = async (payload: IRegisterUser) => {
     }
   }
 
+  if (role !== ENUM_USER_ROLE.customer) {
+    return { id: result?.id, name, email, role, phone };
+  }
   // ACCESS TOKEN
   const accessToken = JwtHelpers.createToken(
     { email, role },

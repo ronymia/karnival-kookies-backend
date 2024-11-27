@@ -24,13 +24,13 @@ const router = express.Router();
  *********************/
 
 //  CREATE PACKAGE
-router.post('/', PackageControllers.createPackage);
+router.post('/', verifyToken, verifyAdmin, PackageControllers.createPackage);
 
 //  GET ALL PACKAGES
-router.get('/', verifyToken, PackageControllers.getAllPackages);
+router.get('/', PackageControllers.getAllPackages);
 
 // GET PACKAGE BY ID
-router.get('/:id', verifyToken, PackageControllers.getPackageById);
+router.get('/:id', PackageControllers.getPackageById);
 
 // UPDATE PACKAGE
 router.patch('/', verifyToken, verifyAdmin, PackageControllers.updatePackage);

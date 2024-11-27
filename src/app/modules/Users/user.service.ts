@@ -2,20 +2,19 @@ import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
 import { pool } from '../../../shared/mySQL';
 import { TPaginationOptions } from '../../../interfaces/pagination';
+import { paginationHelpers } from '../../../helpers/paginationHelpers';
 
 // GET ALL USERS
 const getAllUsers = async (
   filters: any,
   paginationOptions: TPaginationOptions,
 ) => {
-  const { page = 1, perPage = 20 } = paginationOptions;
-
-  // Calculate offset
-  const offset = (Number(page) - 1) * Number(perPage);
+  const { page, limit, offset } =
+    paginationHelpers.calculatePagination(paginationOptions);
 
   // Query to select users with limit and offset for pagination
   const [rows] = await pool.query('SELECT * FROM users LIMIT ? OFFSET ?', [
-    Number(perPage),
+    Number(limit),
     offset,
   ]);
 
@@ -23,24 +22,20 @@ const getAllUsers = async (
   const [countResult] = (await pool.query(
     'SELECT COUNT(*) as totalUsers FROM users',
   )) as any[];
+
+  // GET TOTAL USER COUNT
   const totalUsers = countResult[0].totalUsers;
-  const totalPages = Math.ceil(totalUsers / Number(perPage));
 
-  // Send paginated result and metadata
-  // return {
-  //   data: rows,
-  //   currentPage: page,
-  //   perPage: perPage,
-  //   totalPages: totalPages,
-  //   total: totalUsers,
-  // };
+  // CALCULATE TOTAL USER
+  const totalPages = Math.ceil(totalUsers / Number(limit));
 
+  // Send paginated result and meta data
   return {
     meta: {
       page: Number(page),
-      perPage: Number(perPage),
+      perPage: Number(limit),
       total: totalUsers,
-      totalPage: Math.ceil(totalUsers / Number(perPage)),
+      totalPage: totalPages,
     },
     data: rows,
   };

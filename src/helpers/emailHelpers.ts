@@ -4,6 +4,9 @@ import config from '../config';
 // MESSAGE SENDER CREDENTIAL
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  // host: 'smtp.your-email-provider.com', // e.g., 'smtp.gmail.com' for Gmail
+  port: 587, // or 465 for SSL
+  secure: false, // true for 465, false for other ports
   auth: {
     user: config.node_email,
     pass: config.node_email_password,
@@ -154,9 +157,26 @@ async function orderConfirmationMail(
   return info;
 }
 
+// Function to send email
+async function sendNewsletter(email: string, subject: string, content: string) {
+  try {
+    const info = await transporter.sendMail({
+      from: '"Karnival Kookies" <your-email@example.com>',
+      to: email,
+      subject: subject || 'Weekly Update',
+      html: content || `<p>Your content here</p>`,
+    });
+    console.log('Newsletter sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending newsletter: ', error);
+  }
+}
+
 export const EmailHelpers = {
   resetPasswordCode,
   verifyUserMail,
   congratulateOnAccountCreation,
   orderConfirmationMail,
+  sendNewsletter,
 };
