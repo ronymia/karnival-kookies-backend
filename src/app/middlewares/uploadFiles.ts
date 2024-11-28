@@ -31,7 +31,7 @@ const dynamicFileUpload = (fieldName: string, storageLocation: string) => {
       }
 
       // FILE NAME FORMAT
-      if (req.files) {
+      if (req.files && Array.isArray(req.files)) {
         req.files = req.files.map((file: any) => ({
           ...file,
           file: path.posix.join(
