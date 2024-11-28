@@ -40,14 +40,14 @@ const registerUser = async (payload: IRegisterUser) => {
       email,
       password,
       hashedVerificationCode,
-      role === ENUM_USER_ROLE.customer ? false : true,
+      role === ENUM_USER_ROLE.CUSTOMER ? false : true,
       new Date(),
       new Date(),
     ],
   )) as any[];
 
   // IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL
-  if (result?.insertId && role === ENUM_USER_ROLE.customer) {
+  if (result?.insertId && role === ENUM_USER_ROLE.CUSTOMER) {
     try {
       await EmailHelpers.verifyUserMail(name, email, verificationCode);
       return { message: 'Verification Code sent', email };
@@ -59,7 +59,7 @@ const registerUser = async (payload: IRegisterUser) => {
     }
   }
 
-  if (role !== ENUM_USER_ROLE.customer) {
+  if (role !== ENUM_USER_ROLE.CUSTOMER) {
     return { id: result?.id, name, email, role, phone };
   }
   // ACCESS TOKEN

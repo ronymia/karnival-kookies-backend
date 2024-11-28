@@ -2,8 +2,6 @@ import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
 import verifyAdmin from '../../middlewares/verifyAdmin';
 import { ProductControllers } from './product.controller';
-import multer from 'multer';
-import path from 'path';
 import dynamicFileUpload from '../../middlewares/uploadFiles';
 
 const router = express.Router();
@@ -48,29 +46,6 @@ router.get('/get/random', ProductControllers.getRandomProduct);
 router.get('/price-range', ProductControllers.getProductByPriceRange);
 
 // UPLOAD PRODUCT IMAGES
-const productStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'Images/Products');
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.fieldname + '_' + Date.now() + path.extname(file.originalname),
-    );
-  },
-});
-
-const productUpload = multer({
-  storage: productStorage,
-}).array('files');
-//  UPLOAD PRODUCT IMAGES
-router.post(
-  '/upload',
-  productUpload,
-  verifyToken,
-  verifyAdmin,
-  ProductControllers.uploadProductImage,
-);
 
 // UPDATE
 router.put('/', verifyToken, verifyAdmin, ProductControllers.updateProduct);
@@ -83,7 +58,7 @@ router.delete(
   ProductControllers.deleteProduct,
 );
 
-// UPLOAD PACKAGE FILES
+// UPLOAD PRODUCT FILES
 router.post(
   '/upload-bulk-files',
   // verifyToken,
