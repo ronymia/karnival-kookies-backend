@@ -8,7 +8,6 @@ import { pool } from '../../../shared/mySQL';
 import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
-import { NextFunction, Request, Response } from 'express';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 
 // USER REGISTER FUNCTION
@@ -90,9 +89,10 @@ const loginUser = async (payload: TLoginUser) => {
   const { email, password } = payload;
 
   // FIND USER ON DATABASE
-  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-    email,
-  ])) as any[];
+  const [rows]: [any[], any] = await pool.query(
+    'SELECT * FROM `users` WHERE `email` = ?',
+    [email],
+  );
   const user = rows[0];
 
   //VERIFY PASSWORD MATCH
@@ -112,14 +112,15 @@ const loginUser = async (payload: TLoginUser) => {
   if (!isPasswordMatch) {
     throw new AppError(httpStatus.UNAUTHORIZED, ' Password incorrect');
   }
+  console.log(user);
 
   // IF USER UNVERIFIED
   if (user && !user?.isVerified) {
     // EMAIL VERIFICATION CODE
-    const verificationCode = generateCode();
+    const verificationCode = await generateCode();
     // const salt = await bcrypt.genSalt(12);
     // const hashedCode = await bcrypt.hash(verificationCode, salt);
-    const hashedCode = PasswordHelpers.passwordHash(verificationCode);
+    const hashedCode = await PasswordHelpers.passwordHash(verificationCode);
 
     await pool.query('UPDATE users SET code = ? WHERE email = ?', [
       hashedCode,
@@ -252,13 +253,11 @@ const resetPassword = async (email: string, password: string) => {
 };
 
 //  SEND PASSWORD CODE
-const sendPasswordCode = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  const { email } = req.body;
+const sendPasswordCode = async (email: string) => {
+  console.log({ ResetEmail: email });
+
   const code = generateCode() + '';
+  console.log({ code });
 
   // Check if the user exists
   const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
@@ -286,12 +285,12 @@ const sendPasswordCode = async (
   return {
     success: true,
     message: 'Code sent',
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
-    email: user.email,
+    // user: {
+    //   id: user.id,
+    //   name: user.name,
+    //   email: user.email,
+    // },
+    // email: user.email,
   };
 };
 

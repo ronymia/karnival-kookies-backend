@@ -108,7 +108,7 @@ const resetPassword: RequestHandler = catchAsync(
     const email = req?.params?.email;
     const { ...password } = req.body;
 
-    const result = await AuthServices.resetPassword(email, password);
+    const result = await AuthServices.resetPassword(email, password?.password);
 
     // SET REFRESH TOKEN TO COOKIE
     // const cookieOptions = {
@@ -150,10 +150,10 @@ const logOut: RequestHandler = catchAsync(
 
 // SEND PASSWORD CODE
 const sendPasswordCode: RequestHandler = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    // const email = req.body.email;
+  async (req: Request, res: Response) => {
+    const email = req.body.email;
 
-    const result = await AuthControllers.sendPasswordCode(req, res, next);
+    const result = await AuthServices.sendPasswordCode(email);
     // SET REFRESH TOKEN TO COOKIE
     // const cookieOptions = {
     //   secure: config.node_env === 'product',

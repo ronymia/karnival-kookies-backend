@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { userRole } from '../../../constants/user';
 
+// LOGIN SCHEMA
 const loginZodSchema = z.object({
   body: z.object({
     email: z
@@ -9,6 +10,8 @@ const loginZodSchema = z.object({
     password: z.string({ required_error: 'Password is required' }),
   }),
 });
+
+// REGISTER SCHEMA
 const registerZodSchema = z.object({
   body: z.object({
     name: z.string({ required_error: 'Name is required' }),
@@ -19,6 +22,8 @@ const registerZodSchema = z.object({
     role: z.enum([...userRole] as [string, ...string[]]),
   }),
 });
+
+// REFRESH TOKEN SCHEMA
 const refreshTokenZodSchema = z.object({
   cookie: z.object({
     refreshTokenZodSchema: z.string({
@@ -27,6 +32,7 @@ const refreshTokenZodSchema = z.object({
   }),
 });
 
+// CHANGE PASSWORD SCHEMA
 const changePasswordZodSchema = z.object({
   body: z.object({
     oldPassword: z.string({

@@ -3,7 +3,7 @@ export enum ENUM_USER_ROLE {
   SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   MANAGER = 'manager',
-  customer = 'customer',
+  CUSTOMER = 'customer',
   PRODUCT_MANAGER = 'product_manager',
   ORDER_MANAGER = 'order_manager',
   CUSTOMER_SUPPORT = 'customer_support',

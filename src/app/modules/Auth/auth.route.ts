@@ -62,11 +62,7 @@ router.post(
 );
 
 // RESET PASSWORD
-router.put(
-  '/user/reset-password/:email',
-  validateRequest(AuthValidations.refreshTokenZodSchema),
-  AuthControllers.refreshToken,
-);
+router.put('/user/reset-password/:email', AuthControllers.resetPassword);
 
 // LOGOUT
 router.post('/logOut', AuthControllers.logOut);
