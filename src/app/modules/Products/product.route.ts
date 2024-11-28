@@ -4,6 +4,7 @@ import verifyAdmin from '../../middlewares/verifyAdmin';
 import { ProductControllers } from './product.controller';
 import multer from 'multer';
 import path from 'path';
+import dynamicFileUpload from '../../middlewares/uploadFiles';
 
 const router = express.Router();
 
@@ -80,6 +81,15 @@ router.delete(
   verifyToken,
   verifyAdmin,
   ProductControllers.deleteProduct,
+);
+
+// UPLOAD PACKAGE FILES
+router.post(
+  '/upload-bulk-files',
+  // verifyToken,
+  // verifyAdmin,
+  dynamicFileUpload('files', 'Images/products'),
+  ProductControllers.uploadProductImage,
 );
 
 export const ProductRoutes = router;

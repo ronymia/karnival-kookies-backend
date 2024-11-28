@@ -2,6 +2,7 @@ import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
 import verifyAdmin from '../../middlewares/verifyAdmin';
 import { PackageControllers } from './package.controller';
+import dynamicFileUpload from '../../middlewares/uploadFiles';
 
 const router = express.Router();
 
@@ -41,6 +42,15 @@ router.delete(
   verifyToken,
   verifyAdmin,
   PackageControllers.deletePackage,
+);
+
+// UPLOAD PACKAGE FILES
+router.post(
+  '/upload-bulk-images',
+  // verifyToken,
+  // verifyAdmin,
+  dynamicFileUpload('files', 'Images/packages'),
+  PackageControllers.uploadPackageFiles,
 );
 
 export const PackageRoutes = router;

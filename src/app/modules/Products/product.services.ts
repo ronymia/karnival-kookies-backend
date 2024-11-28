@@ -12,8 +12,6 @@ const createProduct = async (payload: TProduct) => {
     images,
     category,
     inStock,
-    createdAt,
-    updatedAt,
   } = payload;
   const [result] = (await pool.query(
     'INSERT INTO product (name, description, regularPrice, discountPrice, images, category, inStock, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -346,13 +344,10 @@ const getProductByPriceRange = async () => {
 
 // UPLOAD PRODUCT IMAGES
 const uploadProductImage = async (files: any) => {
-  // Ensure 'files' is an array before mapping
-  const docs = files?.map((file: any) => ({
-    file: file?.filename, // The filename saved on the server
-    id: file?.originalname, // The original name of the file uploaded
-  }));
+  // ARRAY OF FILES
+  const uploadableFiles = files?.map((file: any) => file?.file);
 
-  return docs;
+  return uploadableFiles;
 };
 
 // UPDATE

@@ -112,14 +112,12 @@ const loginUser = async (payload: TLoginUser) => {
   if (!isPasswordMatch) {
     throw new AppError(httpStatus.UNAUTHORIZED, ' Password incorrect');
   }
-  console.log(user);
 
   // IF USER UNVERIFIED
   if (user && !user?.isVerified) {
     // EMAIL VERIFICATION CODE
     const verificationCode = await generateCode();
-    // const salt = await bcrypt.genSalt(12);
-    // const hashedCode = await bcrypt.hash(verificationCode, salt);
+    console.log(verificationCode);
     const hashedCode = await PasswordHelpers.passwordHash(verificationCode);
 
     await pool.query('UPDATE users SET code = ? WHERE email = ?', [

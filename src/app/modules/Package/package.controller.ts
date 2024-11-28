@@ -110,10 +110,30 @@ const deletePackage: RequestHandler = catchAsync(
   },
 );
 
+// UPLOAD FILES
+const uploadPackageFiles = async (req: Request, res: Response) => {
+  // Access the files
+  const files = req.files;
+  if (!files || files.length === 0) {
+    return res.status(400).json({ message: 'No files uploaded' });
+  }
+
+  const result = await PackageServices.uploadPackageFiles(files);
+
+  // SEND RESPONSE
+  sendResponse<any>(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: 'Package Files uploaded successfully',
+    data: result,
+  });
+};
+
 export const PackageControllers = {
   createPackage,
   getAllPackages,
   getPackageById,
   updatePackage,
   deletePackage,
+  uploadPackageFiles,
 };

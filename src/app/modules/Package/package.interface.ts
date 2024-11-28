@@ -4,7 +4,9 @@ export interface IPackage {
   description?: string;
   regularPrice: number;
   discountPrice?: number;
-  isDiscountEnable: boolean;
+  inStock?: number;
+  is_active: 0 | 1;
+  images: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
