@@ -12,6 +12,7 @@ import { MessageRoutes } from '../modules/Messages/message.route';
 import { ProductRoutes } from '../modules/Products/product.route';
 import { PackageRoutes } from '../modules/Package/package.route';
 import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
+import { FavoriteProductRoutes } from '../modules/FavoriteProduct/favoriteProduct.route';
 
 const router = express.Router();
 
@@ -72,6 +73,10 @@ const moduleRoutes = [
   {
     path: '/subscribers',
     route: SubscribersRoutes,
+  },
+  {
+    path: '/favorite-products',
+    route: FavoriteProductRoutes,
   },
 ];
 
