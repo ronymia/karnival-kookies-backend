@@ -5,6 +5,9 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import routes from './app/routes';
 import notFoundRoute from './app/middlewares/notFoundRoute';
 import path from 'path';
+import cron from 'node-cron';
+import { EmailSend } from './app/cronJobs/newsletter';
+import httpStatus from 'http-status';
 
 const app: Application = express();
 
@@ -22,9 +25,14 @@ app.use('/', express.static(path.join(process.cwd(), 'Images')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Home
+//CRON JOBS FOR EMAIL
+EmailSend.sendWeeklyNewsletters();
+
+// HOME ROUTE FOR CHECK
 app.get('/', (req, res) => {
-  res.json('Hello world');
+  res.status(httpStatus.OK).json({
+    message: 'Dear Developer Server is running',
+  });
 });
 
 // Application routes
