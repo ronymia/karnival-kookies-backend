@@ -349,7 +349,6 @@ const verifyUserMail = async (payload: any, email: string, otp: any) => {
 
 // GET CURRENT USER
 const getCurrentUser = async (token: Secret) => {
-  console.log({ token });
   try {
     const decoded = jwt.verify(
       token as string,
@@ -369,6 +368,7 @@ const getCurrentUser = async (token: Secret) => {
     if (result?.isVerified) {
       return {
         user: {
+          id: result.id,
           role: result.role,
           name: result.name,
           phone: result.phone,

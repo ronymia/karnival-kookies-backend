@@ -92,12 +92,17 @@ const getAllClientProducts = async (
   // Build query
   const { conditions, params } = buildConditions();
   let query =
-    'SELECT *, COALESCE(discountPrice, regularPrice) AS effectivePrice FROM product';
+    'SELECT p.*, COALESCE(discountPrice, regularPrice) AS effectivePrice, GROUP_CONCAT(fp.user_id) AS favorite_users FROM product p';
+
+  // Join favorite_products table to fetch the user_ids who favorited the product
+  query += ' LEFT JOIN favorite_products fp ON p.id = fp.product_id';
+
   if (conditions.length > 0) {
     query += ' WHERE ' + conditions.join(' AND ');
   }
+
   const orderBy = buildSorting();
-  query += ` ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
+  query += ` GROUP BY p.id ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
   params.push(Number(perPage), offset);
 
   // Execute main query
@@ -127,9 +132,16 @@ const getAllClientProducts = async (
       );
       images = product.images; // Fallback to original string
     }
+
+    // Convert favorite_users to an array of user IDs
+    const favoriteUsers = product.favorite_users
+      ? product.favorite_users.split(',').map(Number)
+      : [];
+
     return {
       ...product,
       images,
+      favorite_users: favoriteUsers, // Add the favorite_users field
     };
   });
 
