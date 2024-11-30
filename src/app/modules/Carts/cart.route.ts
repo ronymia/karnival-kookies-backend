@@ -70,6 +70,7 @@ router.post(
   verifyAdmin,
   CartControllers.updateCartStatus,
 );
+
 // DELETE CART CART
 router.delete('/:id', verifyToken, verifyAdmin, CartControllers.deleteCart);
 // DELETE CART BULK CART

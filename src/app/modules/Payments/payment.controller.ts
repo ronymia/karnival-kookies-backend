@@ -24,15 +24,15 @@ const stripeConfig: RequestHandler = catchAsync(
 // PAYMENT INTENT
 const paymentIntent: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const { ...paymentData } = req.body;
+    const { ...payloadData } = req.body;
 
-    const result = await PaymentServices.paymentIntent(paymentData);
+    const result = await PaymentServices.paymentIntent(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
+      statusCode: httpStatus.CREATED,
       success: true,
-      message: 'Stripe Config Updated successfully',
+      message: 'Payment Success successfully',
       data: result,
     });
   },

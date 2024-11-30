@@ -68,9 +68,9 @@ const getAllCarts: RequestHandler = catchAsync(
 // UPDATE CART
 const updateCart: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const { ...cartData } = req.body;
+    const { ...payloadData } = req.body;
 
-    const result = await CartServices.createCart(cartData);
+    const result = await CartServices.updateCart(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -148,9 +148,9 @@ const updateCartStatus: RequestHandler = catchAsync(
 // DELETE CART
 const deleteCart: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const { ...cartData } = req.params;
+    const { id } = req.params;
 
-    const result = await CartServices.deleteCart(cartData);
+    const result = await CartServices.deleteCart(Number(id));
 
     // SEND RESPONSE
     sendResponse<any>(res, {

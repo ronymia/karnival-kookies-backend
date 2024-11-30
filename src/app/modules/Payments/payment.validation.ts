@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  price: z.number().int().positive('Price must be a positive integer'),
+  body: z.object({
+    price: z.number().positive('Price must be a positive'),
+  }),
 });
 
 //

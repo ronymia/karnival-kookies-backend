@@ -43,7 +43,7 @@ const moduleRoutes = [
     route: CartRoutes,
   },
   {
-    path: '/carts',
+    path: '/payments',
     route: PaymentRoutes,
   },
   {

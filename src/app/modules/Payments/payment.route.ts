@@ -26,14 +26,14 @@ const router = express.Router();
 
 //  STIPE CONFIG
 router.get(
-  '/payment/config',
+  '/config',
   verifyToken,
   //   validateRequest(CartValidations.createSchema),
   PaymentControllers.stripeConfig,
 );
 //  CREATE NEW CART
 router.post(
-  '/payment/create-payment-intent',
+  '/create-payment-intent',
   verifyToken,
   validateRequest(PaymentValidations.createSchema),
   PaymentControllers.paymentIntent,

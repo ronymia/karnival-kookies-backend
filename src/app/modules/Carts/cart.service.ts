@@ -6,17 +6,18 @@ import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
 
 //   CREATE A NEW CART
-const createCart = async (payload: any) => {
+const createCart = async (payload: any): Promise<any> => {
   const { productId, email, quantity } = payload;
 
-  //
   // Check if cart item already exists
   const [exists] = (await pool.query(
     'SELECT * FROM cart WHERE email = ? AND productId = ?',
     [email, productId],
   )) as any[];
-  if (exists.length) {
-    return { success: false, quantity, exists: exists[0] };
+
+  //
+  if (exists?.length) {
+    throw new AppError(httpStatus.CONFLICT, 'Already in cart list');
   }
 
   // Insert new cart item
@@ -144,7 +145,7 @@ const getAllCarts = async (
 };
 
 // UPDATE CART
-const updateCart = async (payload: any) => {
+const updateCart = async (payload: any): Promise<any> => {
   const { exists, quantity } = payload;
 
   const result = await pool.query(
@@ -152,7 +153,7 @@ const updateCart = async (payload: any) => {
     [quantity, new Date(), exists.id],
   );
 
-  return { result };
+  return result;
 };
 
 // CHECKOUT BY EMAIL
@@ -288,10 +289,9 @@ const updateCartStatus = async (id: any, payload: any) => {
 };
 
 // DELETE CART
-const deleteCart = async (id: any) => {
-  const [result] = (await pool.query('DELETE FROM cart WHERE id = ?', [
-    Number(id),
-  ])) as any[];
+const deleteCart = async (id: number) => {
+  const [result] = await pool.query('DELETE FROM cart WHERE id = ?', [id]);
+
   return result;
 };
 // DELETE BULK CART

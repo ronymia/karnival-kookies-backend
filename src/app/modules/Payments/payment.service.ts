@@ -9,20 +9,23 @@ const stripeConfig = async () => {
 };
 
 // PAYMENT INTENT
-const paymentIntent = async (payload: any) => {
+const paymentIntent = async (payload: { price: number }) => {
   const { price } = payload;
-  const amount = parseInt(price) * 100;
+  const amount = Number(price) * 100;
   if (!amount) {
     return;
   }
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amount,
-    currency: PAYMENT_CURRENCY.usd,
-    payment_method_types: [PAYMENT_METHOD.cart],
+    currency: PAYMENT_CURRENCY.USD,
+    payment_method_types: [PAYMENT_METHOD.CARD],
+    // automatic_payment_methods: {
+    //   enabled: true,
+    // },
   });
   //   console.log(paymentIntent);
   return {
-    clientSecret: paymentIntent.client_secret,
+    clientSecret: paymentIntent?.client_secret,
   };
 };
 

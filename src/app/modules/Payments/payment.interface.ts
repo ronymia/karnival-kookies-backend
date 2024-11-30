@@ -1,7 +1,8 @@
+/* eslint-disable no-unused-vars */
 export enum PAYMENT_METHOD {
-  cart = 'cart',
+  CARD = 'card',
 }
 
 export enum PAYMENT_CURRENCY {
-  usd = 'usd',
+  USD = 'usd',
 }
