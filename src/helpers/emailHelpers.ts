@@ -2,37 +2,24 @@ import nodemailer from 'nodemailer';
 import config from '../config';
 import mg from 'nodemailer-mailgun-transport';
 
-// Mailgun configuration
-const mailgunOptions = {
-  auth: {
-    api_key: 'REMOVED_MAILGUN_API_KEY',
-    domain: 'sandboxb355576c377c45ceae3343bcb83bf42a.mailgun.org',
-  },
-};
-
-// Create transporter using Mailgun
-const transporter = nodemailer.createTransport(mg(mailgunOptions));
-
 // MESSAGE SENDER CREDENTIAL
 // const transporter = nodemailer.createTransport({
 //   host: 'karnivalkookies.com',
-//   port: 465, // or 465 for SSL
-//   secure: true, // true for 465, false for other ports
+//   port: 465,
+//   secure: true,
 //   auth: {
 //     user: 'promotions@karnivalkookies.com',
 //     pass: 'Rony@142654',
 //   },
 // });
-// const transporter = nodemailer.createTransport({
-//   service: 'gmail',
-//   // host: 'smtp.your-email-provider.com', // e.g., 'smtp.gmail.com' for Gmail
-//   // port: 587, // or 465 for SSL
-//   // secure: false, // true for 465, false for other ports
-//   auth: {
-//     user: config.node_email,
-//     pass: config.node_email_password,
-//   },
-// });
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: config.node_email,
+    pass: config.node_email_password,
+  },
+});
 
 // CONGRATULATIONS ON ACCOUNT SUCCESSFULLY VERIFICATION
 async function congratulateOnAccountCreation(name: string, email: string) {

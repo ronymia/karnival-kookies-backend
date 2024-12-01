@@ -69,14 +69,15 @@ const getAllCarts: RequestHandler = catchAsync(
 const updateCart: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { ...payloadData } = req.body;
+    const { id } = req.params;
 
-    const result = await CartServices.updateCart(payloadData);
+    const result = await CartServices.updateCart(Number(id), payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
-      statusCode: httpStatus.CREATED,
+      statusCode: httpStatus.OK,
       success: true,
-      message: 'Cart upDATE successfully',
+      message: 'Order status updated successfully',
       data: result,
     });
   },

@@ -83,12 +83,12 @@ const getAllCarts = async (
   filters: any,
   paginationOptions: TPaginationOptions,
 ) => {
-  const { page = 1, perPage = 20 } = paginationOptions;
-  const offset = (Number(page) - 1) * Number(perPage);
+  const { page, limit, offset } =
+    paginationHelpers.calculatePagination(paginationOptions);
 
   const [checkoutItems] = (await pool.query(
     'SELECT * FROM checkout ORDER BY createdAt DESC LIMIT ? OFFSET ?',
-    [perPage, offset],
+    [limit, offset],
   )) as any[];
 
   const parsedCheckouts = checkoutItems.map((checkout: any) => {
@@ -140,7 +140,7 @@ const getAllCarts = async (
     data: finalCheckouts,
     total: totalItem,
     currentPage: page,
-    totalPages: Math.ceil(totalItem / perPage),
+    totalPages: Math.ceil(totalItem / limit),
   };
 };
 

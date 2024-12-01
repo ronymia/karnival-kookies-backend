@@ -64,7 +64,7 @@ router.post(
 );
 
 // UPDATE CART STATUS
-router.post(
+router.put(
   '/checkout/:id',
   verifyToken,
   verifyAdmin,
