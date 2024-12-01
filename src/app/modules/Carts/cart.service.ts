@@ -140,7 +140,7 @@ const getAllCarts = async (
     data: finalCheckouts,
     total: totalItem,
     currentPage: page,
-    totalPages: Math.ceil(totalItem / limit),
+    totalPages: Math.ceil(totalItem / limit!),
   };
 };
 
