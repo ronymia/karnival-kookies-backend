@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import config from '../config';
-import mg from 'nodemailer-mailgun-transport';
 
 // MESSAGE SENDER CREDENTIAL
 // const transporter = nodemailer.createTransport({

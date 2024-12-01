@@ -149,8 +149,8 @@ const updateCart = async (payload: any): Promise<any> => {
   const { exists, quantity } = payload;
 
   const result = await pool.query(
-    'UPDATE cart SET quantity = ?, updatedAt = ? WHERE id = ?',
-    [quantity, new Date(), exists.id],
+    'UPDATE cart SET quantity = ?, WHERE id = ?',
+    [quantity, exists.id],
   );
 
   return result;

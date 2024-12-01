@@ -69,9 +69,8 @@ const getAllCarts: RequestHandler = catchAsync(
 const updateCart: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { ...payloadData } = req.body;
-    const { id } = req.params;
 
-    const result = await CartServices.updateCart(Number(id), payloadData);
+    const result = await CartServices.updateCart(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
