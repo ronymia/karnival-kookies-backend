@@ -51,9 +51,9 @@ const createProduct = async (payload: TProduct) => {
 
 // GET ALL PRODUCT
 const getAllClientProducts = async (
-  filter: TProductFilters,
+  filter: any,
   paginationOptions: TPaginationOptions,
-) => {
+): Promise<any> => {
   const {
     category_id,
     fromPrice,
