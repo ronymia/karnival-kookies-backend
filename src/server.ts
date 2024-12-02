@@ -2,12 +2,19 @@ import { Server } from 'http';
 import app from './app';
 import { errorLogger, logger } from './shared/logger';
 import config from './config';
+import { pool } from './shared/mySQL';
 
 async function bootstrap() {
   // SERVER LISTENING PORT
   const server: Server = app.listen(config.port, () => {
     logger.info(`Server running on port ${config.port}`);
   });
+
+  //
+  pool
+    .getConnection()
+    .then(() => console.log('Database connection successful'))
+    .catch((err) => console.error('Database connection error:', err));
 
   // Graceful shutdown function
   const exitHandler = async () => {

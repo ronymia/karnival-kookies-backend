@@ -35,34 +35,35 @@ const getAllClientProducts: RequestHandler = catchAsync(
       paginationOptions,
     );
 
-    // res.status(200).json(result);
-
     // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
       message: 'Product fetch successfully',
-      meta: result.meta,
-      data: result.data,
+      meta: result?.meta,
+      data: result?.data,
     });
   },
 );
 // GET ALL
 const getAllProducts: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
+    const filters = pick(req.query, productFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
 
-    const result = await ProductServices.getAllProducts();
+    const result = await ProductServices.getAllProducts(
+      filters,
+      paginationOptions,
+    );
 
-    res.status(200).json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Product fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Product fetch successfully',
+      meta: result?.meta,
+      data: result?.data,
+    });
   },
 );
 // GET BY ID
@@ -72,39 +73,15 @@ const getProductById: RequestHandler = catchAsync(
     // const paginationOptions = pick(req.query, paginationFields);
     const { id } = req.params;
 
-    const result = await ProductServices.getProductById(id);
+    const result = await ProductServices.getProductById(Number(id));
 
-    res.status(200).json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Product fetch successfully',
-    //   data: result,
-    // });
-  },
-);
-// GET PRODUCT BY CATEGORY ID
-const getProductByCategoryID: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { id } = req.params;
-    const { limit, skip } = req.query;
-
-    const result = await ProductServices.getProductByCategoryID(id, {
-      limit,
-      skip,
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Product fetch successfully',
+      data: result,
     });
-
-    res.status(200).json(result);
-    // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Product fetch successfully',
-    //   data: result,
-    // });
   },
 );
 
@@ -127,25 +104,6 @@ const getRandomProduct: RequestHandler = catchAsync(
       meta: result.meta,
       data: result.data,
     });
-  },
-);
-//   GET PRODUCT BY PRICE RANGE
-const getProductByPriceRange: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    // const { id } = req.params;
-
-    const result = await ProductServices.getProductByPriceRange();
-
-    res.status(200).json(result);
-    // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Product fetch successfully',
-    //   data: result,
-    // });
   },
 );
 
@@ -211,8 +169,6 @@ export const ProductControllers = {
   deleteProduct,
   getAllProducts,
   getProductById,
-  getProductByCategoryID,
   getRandomProduct,
-  getProductByPriceRange,
   uploadProductImage,
 };

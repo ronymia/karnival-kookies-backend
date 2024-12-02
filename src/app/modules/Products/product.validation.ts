@@ -1,17 +1,19 @@
 import { z } from 'zod';
+import { productStatus } from './product.constant';
 
-const createSchema = z
-  .object({
+const createSchema = z.object({
+  body: z.object({
+    id: z.number({ required_error: 'Id is required' }).nullable().optional(),
     name: z
       .string({ required_error: 'Name is required' })
       .min(1, 'Name cannot be empty'),
     description: z
       .string({ required_error: 'Description is required' })
       .min(10, 'Description must be at least 10 characters long'),
-    regularPrice: z
+    regular_price: z
       .number({ required_error: 'Regular price is required' })
       .positive('Regular price must be a positive number'),
-    discountPrice: z
+    discount_price: z
       .number()
       .positive('Discount price must be a positive number')
       .optional(),
@@ -20,39 +22,52 @@ const createSchema = z
         required_error: 'Images are required',
       })
       .min(1, 'At least one image is required'),
-    category: z
-      .string({ required_error: 'Category is required' })
-      .min(1, 'Category cannot be empty'),
-    inStock: z.boolean({ required_error: 'Stock status is required' }),
-  })
-  .refine(
-    (data) => {
-      return !data.discountPrice || data.discountPrice < data.regularPrice;
-    },
-    {
-      message: 'Discount price should be less than the regular price',
-      path: ['discountPrice'],
-    },
-  );
+    category_id: z
+      .number({ required_error: 'Category is required' })
+      .positive('Category ID Should be Positive number'),
+    quantity: z
+      .number({ required_error: 'Quantity is required' })
+      .positive('Quantity Should be Positive number'),
+    is_discount_enable: z.boolean({
+      required_error: 'Discount Activation is required',
+    }),
+    status: z.enum([...productStatus] as [string, ...string[]]),
+  }),
+});
 
 // Define the schema for the request body
 const updateSchema = z.object({
-  id: z.string().optional(), // Assuming id is optional, adjust as needed
-  name: z.string().min(1, { message: 'Name is required' }),
-  description: z.string().optional(),
-  regularPrice: z
-    .number()
-    .min(0, { message: 'Valid regular price is required' }),
-  discountPrice: z
-    .number()
-    .min(0, { message: 'Discount price cannot be negative' })
-    .optional(),
-  images: z
-    .array(z.string())
-    .min(1, { message: 'At least one image is required' }),
-  category: z.string().min(1, { message: 'Category is required' }),
-  inStock: z.number().min(0, { message: 'Valid stock is required' }),
-  createdAt: z.string().optional(), // Assuming createdAt is optional, adjust as needed
+  body: z.object({
+    id: z.number({ required_error: 'Id is required' }),
+    name: z
+      .string({ required_error: 'Name is required' })
+      .min(1, 'Name cannot be empty'),
+    description: z
+      .string({ required_error: 'Description is required' })
+      .min(10, 'Description must be at least 10 characters long'),
+    regular_price: z
+      .number({ required_error: 'Regular price is required' })
+      .positive('Regular price must be a positive number'),
+    discount_price: z
+      .number()
+      .positive('Discount price must be a positive number')
+      .optional(),
+    images: z
+      .array(z.string().url('Each image must be a valid URL'), {
+        required_error: 'Images are required',
+      })
+      .min(1, 'At least one image is required'),
+    category_id: z
+      .number({ required_error: 'Category is required' })
+      .positive('Category ID Should be Positive number'),
+    quantity: z
+      .number({ required_error: 'Quantity is required' })
+      .positive('Quantity Should be Positive number'),
+    is_discount_enable: z.boolean({
+      required_error: 'Discount Activation is required',
+    }),
+    status: z.enum([...productStatus] as [string, ...string[]]),
+  }),
 });
 
 export const ProductValidations = { createSchema, updateSchema };

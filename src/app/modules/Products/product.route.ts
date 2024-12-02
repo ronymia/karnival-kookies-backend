@@ -3,6 +3,8 @@ import verifyToken from '../../middlewares/verifyToken';
 import verifyAdmin from '../../middlewares/verifyAdmin';
 import { ProductControllers } from './product.controller';
 import dynamicFileUpload from '../../middlewares/uploadFiles';
+import validateRequest from '../../middlewares/validateRequest';
+import { ProductValidations } from './product.validation';
 
 const router = express.Router();
 
@@ -25,7 +27,13 @@ const router = express.Router();
  *********************/
 
 //  CREATE
-router.post('/', verifyToken, verifyAdmin, ProductControllers.createProduct);
+router.post(
+  '/',
+  verifyToken,
+  verifyAdmin,
+  // validateRequest(ProductValidations.createSchema),
+  ProductControllers.createProduct,
+);
 
 // GET ALL
 router.get('/', ProductControllers.getAllClientProducts);
@@ -36,19 +44,19 @@ router.get('/all-products', ProductControllers.getAllProducts);
 // GET PRODUCT BY ID
 router.get('/:id', ProductControllers.getProductById);
 
-// GET PRODUCT BY CATEGORY
-router.get('/category/:id', ProductControllers.getProductByCategoryID);
-
 //   GET RANDOM PRODUCT
 router.get('/get/random', ProductControllers.getRandomProduct);
-
-//   GET PRODUCT BY PRICE RANGE
-router.get('/price-range', ProductControllers.getProductByPriceRange);
 
 // UPLOAD PRODUCT IMAGES
 
 // UPDATE
-router.put('/', verifyToken, verifyAdmin, ProductControllers.updateProduct);
+router.put(
+  '/',
+  verifyToken,
+  verifyAdmin,
+  // validateRequest(ProductValidations.updateSchema),
+  ProductControllers.updateProduct,
+);
 
 // DELETE
 router.delete(

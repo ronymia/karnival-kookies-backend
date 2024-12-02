@@ -1,30 +1,35 @@
+import httpStatus from 'http-status';
+import AppError from '../../../errors/AppError';
+import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
-import { TProduct } from './product.interface';
+import { TProduct, TProductFilters } from './product.interface';
 
 // CREATE PRODUCT
 const createProduct = async (payload: TProduct) => {
   const {
     name,
     description,
-    regularPrice,
-    discountPrice,
+    regular_price,
+    discount_price,
     images,
-    category,
-    inStock,
+    category_id,
+    quantity,
+    is_discount_enable,
+    status,
   } = payload;
   const [result] = (await pool.query(
-    'INSERT INTO product (name, description, regularPrice, discountPrice, images, category, inStock, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO products (name, description, regular_price, discount_price, images, category_id, quantity, is_discount_enable, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       name,
       description,
-      regularPrice,
-      discountPrice,
+      regular_price,
+      discount_price,
       JSON.stringify(images),
-      category,
-      inStock,
-      new Date(),
-      new Date(),
+      category_id,
+      quantity,
+      is_discount_enable,
+      status,
     ],
   )) as any[];
 
@@ -32,13 +37,13 @@ const createProduct = async (payload: TProduct) => {
     id: result.insertId,
     name,
     description,
-    regularPrice,
-    discountPrice,
+    regular_price,
+    discount_price,
     images,
-    category,
-    inStock,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    category_id,
+    quantity,
+    is_discount_enable,
+    status,
   };
 
   return newProduct;
@@ -46,209 +51,231 @@ const createProduct = async (payload: TProduct) => {
 
 // GET ALL PRODUCT
 const getAllClientProducts = async (
-  filter: any,
+  filter: TProductFilters,
   paginationOptions: TPaginationOptions,
 ) => {
-  const { category, fromPrice, toPrice, sortByNewest } = filter;
-  const { page = 1, perPage = 10, sortBy, sortOrder } = paginationOptions;
+  const {
+    category_id,
+    fromPrice,
+    toPrice,
+    sortByNewest,
+    HighToLow,
+    lowToHigh,
+    searchTerm,
+  } = filter;
 
-  const offset = (Number(page) - 1) * Number(perPage);
+  const {
+    page,
+    limit,
+    sortBy = 'created_at',
+    sortOrder = 'ASC',
+  } = paginationOptions;
 
-  // Helper: Build filter conditions
-  const buildConditions = () => {
-    const conditions: string[] = [];
-    const params: (string | number)[] = [];
+  const offset = (Number(page) - 1) * Number(limit);
 
-    if (category) {
-      conditions.push('category = ?');
-      params.push(category);
-    }
-    if (fromPrice) {
-      conditions.push('COALESCE(discountPrice, regularPrice) >= ?');
-      params.push(parseFloat(fromPrice));
-    }
-    if (toPrice) {
-      conditions.push('COALESCE(discountPrice, regularPrice) <= ?');
-      params.push(parseFloat(toPrice));
-    }
+  // Base query for products
+  let query = `
+    SELECT 
+      p.*, 
+      COALESCE(p.discount_price, p.regular_price) AS effective_price,
+      JSON_OBJECT(
+        'id', c.id,
+        'name', c.name,
+        'description', c.description,
+        'created_at', c.created_at,
+        'updated_at', c.updated_at
+      ) AS category,
+      JSON_ARRAYAGG(fp.user_id) AS favorite_users
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN favorite_products fp ON p.id = fp.product_id
+  `;
 
-    return { conditions, params };
-  };
+  // Base query for total count
+  let countQuery = `
+    SELECT 
+      COUNT(DISTINCT p.id) AS total_count
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN favorite_products fp ON p.id = fp.product_id
+  `;
 
-  // Helper: Build ORDER BY clause
-  const buildSorting = () => {
-    if (sortByNewest) {
-      return 'createdAt DESC';
-    } else if (sortBy) {
-      return `${sortBy} ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
-    } else if (sortOrder === 'highToLow') {
-      return 'COALESCE(discountPrice, regularPrice) DESC';
-    } else if (sortOrder === 'lowToHigh') {
-      return 'COALESCE(discountPrice, regularPrice) ASC';
-    }
-    return 'createdAt ASC'; // Default sorting
-  };
+  // WHERE conditions
+  const whereConditions: string[] = [];
+  const values: any[] = [];
 
-  // Build query
-  const { conditions, params } = buildConditions();
-  let query =
-    'SELECT p.*, COALESCE(discountPrice, regularPrice) AS effectivePrice, GROUP_CONCAT(fp.user_id) AS favorite_users FROM product p';
-
-  // Join favorite_products table to fetch the user_ids who favorited the product
-  query += ' LEFT JOIN favorite_products fp ON p.id = fp.product_id';
-
-  if (conditions.length > 0) {
-    query += ' WHERE ' + conditions.join(' AND ');
+  if (category_id) {
+    whereConditions.push('p.category_id = ?');
+    values.push(category_id);
   }
 
-  const orderBy = buildSorting();
-  query += ` GROUP BY p.id ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
-  params.push(Number(perPage), offset);
-
-  // Execute main query
-  const [products] = (await pool.query(query, params)) as any[];
-
-  // Build and execute count query
-  let countQuery = 'SELECT COUNT(*) as count FROM product';
-  if (conditions.length > 0) {
-    countQuery += ' WHERE ' + conditions.join(' AND ');
+  if (fromPrice) {
+    whereConditions.push('COALESCE(p.discount_price, p.regular_price) >= ?');
+    values.push(fromPrice);
   }
-  const [totalProductsResult] = (await pool.query(
+
+  if (toPrice) {
+    whereConditions.push('COALESCE(p.discount_price, p.regular_price) <= ?');
+    values.push(toPrice);
+  }
+
+  if (searchTerm) {
+    whereConditions.push(
+      `(p.name LIKE ? OR p.description LIKE ? OR c.name LIKE ?)`,
+    );
+    const term = `%${searchTerm}%`;
+    values.push(term, term, term);
+  }
+
+  // Add WHERE clause to both queries if conditions exist
+  if (whereConditions.length > 0) {
+    const whereClause = ` WHERE ${whereConditions.join(' AND ')}`;
+    query += whereClause;
+    countQuery += whereClause;
+  }
+
+  // GROUP BY for product query
+  query += ` GROUP BY p.id`;
+
+  // Sorting
+  if (sortByNewest) {
+    query += ` ORDER BY p.created_at DESC`;
+  } else if (HighToLow) {
+    query += ` ORDER BY effective_price DESC`;
+  } else if (lowToHigh) {
+    query += ` ORDER BY effective_price ASC`;
+  } else {
+    query += ` ORDER BY ${sortBy} ${sortOrder}`;
+  }
+
+  // Pagination
+  query += ` LIMIT ? OFFSET ?`;
+  values.push(Number(limit), Number(offset));
+
+  // Execute the queries
+  const [products] = (await pool.query(query, values)) as any[];
+  const [totalCountResult] = (await pool.query(
     countQuery,
-    params.slice(0, -2), // Exclude pagination params
+    values.slice(0, -2),
   )) as any[];
-  const totalProducts = totalProductsResult[0].count;
+  const totalCount = totalCountResult[0]?.total_count || 0;
 
-  // Parse product images
-  const parseProductImages = products.map((product: any) => {
-    let images;
-    try {
-      images = JSON.parse(product.images);
-    } catch (error) {
-      console.error(
-        'JSON parsing error for product images:',
-        product.images,
-        error,
-      );
-      images = product.images; // Fallback to original string
-    }
-
-    // Convert favorite_users to an array of user IDs
-    const favoriteUsers = product.favorite_users
-      ? product.favorite_users.split(',').map(Number)
-      : [];
-
-    return {
-      ...product,
-      images,
-      favorite_users: favoriteUsers, // Add the favorite_users field
-    };
-  });
-
-  // Return paginated response
   return {
     meta: {
+      total: totalCount,
       page,
-      perPage,
-      total: totalProducts,
-      totalPage: Math.ceil(totalProducts / Number(perPage)),
+      limit,
     },
-    data: parseProductImages,
+    data: products,
   };
 };
 
 // GET ALL
-const getAllProducts = async () => {
-  // Get all products (name and id only)
-  const [products] = await pool.query('SELECT id, name FROM product');
+const getAllProducts = async (
+  filters: any,
+  paginationOptions: TPaginationOptions,
+) => {
+  const {
+    page,
+    limit,
+    offset,
+    sortBy = 'id',
+    sortOrder = 'ASC',
+  } = paginationHelpers.calculatePagination(paginationOptions);
 
-  // Get total count of products
+  // Base query to fetch products with category information
+  let query = `
+    SELECT 
+      p.*, 
+      COALESCE(p.discount_price, p.regular_price) AS effective_price, 
+      JSON_OBJECT(
+        'id', c.id,
+        'name', c.name,
+        'description', c.description,
+        'created_at', c.created_at,
+        'updated_at', c.updated_at
+      ) AS category
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+  `;
+
+  // Construct WHERE conditions for filters
+  const filterConditions: string[] = [];
+  const filterValues: any[] = [];
+
+  // Dynamically build the filter conditions
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      filterConditions.push(`p.${key} = ?`);
+      filterValues.push(value);
+    }
+  });
+
+  // If there are filters, add them to the query
+  if (filterConditions.length > 0) {
+    query += ` WHERE ${filterConditions.join(' AND ')}`;
+  }
+
+  // Add sorting and pagination to the query
+  query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
+
+  // Add pagination values to filterValues
+  filterValues.push(limit, offset);
+
+  // Execute the query to fetch products
+  const [products] = await pool.query(query, filterValues);
+
+  // Query to get the total count of filtered products
+  let countQuery = `
+    SELECT COUNT(*) AS count 
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+  `;
+
+  // Add the WHERE condition for counting if filters exist
+  if (filterConditions.length > 0) {
+    countQuery += ` WHERE ${filterConditions.join(' AND ')}`;
+  }
+
+  // Execute the count query
   const [totalProductsResult] = (await pool.query(
-    'SELECT COUNT(*) as count FROM product',
-  )) as any[];
-  const totalProducts = totalProductsResult[0].count;
+    countQuery,
+    filterValues.slice(0, -2),
+  )) as any; // Exclude LIMIT and OFFSET
+  const totalProducts = totalProductsResult[0]?.count || 0;
 
   return {
-    data: products, // Only id and name are returned
-    total: totalProducts,
+    meta: {
+      total: totalProducts,
+      page,
+      limit,
+    },
+    data: products,
   };
 };
 
 //   GET SINGLE PRODUCT
-const getProductById = async (id: any) => {
-  const [product] = (await pool.query('SELECT * FROM product WHERE id = ?', [
-    parseInt(id),
-  ])) as any[];
+const getProductById = async (id: number) => {
+  const [product] = (await pool.query(
+    `SELECT 
+      p.*, 
+      JSON_OBJECT(
+        'id', c.id,
+        'name', c.name,
+        'description', c.description
+      ) AS category
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.id = ?`,
+    [id],
+  )) as any[];
 
-  // console.log({ singlePro: product });
-
+  // IF PRODUCT NOT FOUND
   if (product.length === 0) {
-    return { error: 'Product not found' };
+    throw new AppError(httpStatus.NOT_FOUND, 'Product not found');
   }
-  const [category] = (await pool.query('SELECT * FROM category WHERE id = ?', [
-    product[0].category,
-  ])) as any[];
-  return {
-    success: true,
-    data: product?.map((product: any) => {
-      try {
-        const parsedImages = JSON.parse(product.images);
-        return {
-          ...product,
-          categoryName: category[0].name,
-          images: parsedImages,
-        };
-      } catch (error) {
-        console.error(
-          'JSON parsing error for product images:',
-          product.images,
-          error,
-        );
-        return {
-          ...product,
-          images: product.images, // Return the original string if parsing fails
-        };
-      }
-    })[0],
-  };
-};
 
-//   GET PRODUCT BY CATEGORY
-const getProductByCategoryID = async (id: any, reqQuery: any) => {
-  const { limit = 4, skip } = reqQuery;
-
-  const query = skip
-    ? 'SELECT * FROM product WHERE category = ? AND id != ? LIMIT ?'
-    : 'SELECT * FROM product WHERE category = ? LIMIT ?';
-
-  const values = skip
-    ? [id, parseInt(skip), parseInt(limit)]
-    : [id, parseInt(limit)];
-
-  const [products] = (await pool.query(query, values)) as any[];
-
-  return {
-    success: true,
-    data: products?.map((product: any) => {
-      try {
-        const parsedImages = JSON.parse(product.images);
-        return {
-          ...product,
-          images: parsedImages,
-        };
-      } catch (error) {
-        console.error(
-          'JSON parsing error for product images:',
-          product.images,
-          error,
-        );
-        return {
-          ...product,
-          images: product.images, // Return the original string if parsing fails
-        };
-      }
-    }),
-  };
+  return product[0];
 };
 
 //   GET RANDOM PRODUCT
@@ -259,10 +286,12 @@ const getRandomProduct = async (
   const { searchKey = '' } = filters;
   const { page = 1, perPage = 8 } = paginationOptions;
   const offset = (Number(page) - 1) * Number(perPage);
-  let query = `SELECT * FROM product `;
+
+  //
+  let query = `SELECT * FROM products `;
   const queryParams = [];
 
-  let countQuery = `SELECT COUNT(*) as count FROM product `;
+  let countQuery = `SELECT COUNT(*) as count FROM products `;
   const countQueryParams = [];
 
   if (searchKey && searchKey !== 'undefined') {
@@ -286,36 +315,6 @@ const getRandomProduct = async (
   )) as any[];
   const totalProducts = totalProductsResult[0].count;
 
-  // PARSE PRODUCT IMAGES JSON TO JS
-  const parseProductImages = products?.map((product: any) => {
-    try {
-      const parsedImages = JSON.parse(product.images);
-      return {
-        ...product,
-        images: parsedImages,
-      };
-    } catch (error) {
-      console.error(
-        'JSON parsing error for product images:',
-        product.images,
-        error,
-      );
-      return {
-        ...product,
-        images: product.images, // Return the original string if parsing fails
-      };
-    }
-  });
-
-  // Process and send response
-  // return {
-
-  //   success: true,
-  //   data: productImages,
-  //   page: Number(page),
-  //   perPage: Number(perPage),
-  //   total: totalProducts,
-  // };
   return {
     meta: {
       page: Number(page),
@@ -323,35 +322,8 @@ const getRandomProduct = async (
       total: totalProducts,
       totalPage: Math.ceil(totalProducts / Number(perPage)),
     },
-    data: parseProductImages,
+    data: products,
   };
-};
-
-//  GET PRODUCT BY PRICE RANGE
-const getProductByPriceRange = async () => {
-  try {
-    // Get the most expensive product
-    const [mostExpensiveProduct] = (await pool.query(
-      'SELECT * FROM product ORDER BY regularPrice DESC LIMIT 1',
-    )) as any[];
-
-    // Get the cheapest product
-    const [cheapestProduct] = (await pool.query(
-      'SELECT * FROM product ORDER BY regularPrice ASC LIMIT 1',
-    )) as any[];
-
-    if (!mostExpensiveProduct[0] || !cheapestProduct[0]) {
-      throw new Error('No products found in the database.');
-    }
-
-    return {
-      mostExpensiveProduct: mostExpensiveProduct[0],
-      cheapestProduct: cheapestProduct[0],
-    };
-  } catch (error) {
-    console.error('Error fetching product price range:', error);
-    throw error; // Re-throw to handle it higher up
-  }
 };
 
 // UPLOAD PRODUCT IMAGES
@@ -368,24 +340,27 @@ const updateProduct = async (payload: any) => {
     id,
     name,
     description,
-    regularPrice,
-    discountPrice,
+    regular_price,
+    discount_price,
     images,
-    category,
-    inStock,
+    category_id,
+    quantity,
+    is_discount_enable,
+    status,
   } = payload;
 
   const [result] = await pool.query(
-    'UPDATE product SET name = ?, description = ?, regularPrice = ?, discountPrice = ?, images = ?, category = ?, inStock = ?, updatedAt = ? WHERE id = ?',
+    'UPDATE products SET name = ?, description = ?, regular_price = ?, discount_price = ?, images = ?, category_id = ?, quantity = ?, is_discount_enable = ?, status = ? WHERE id = ?',
     [
       name,
       description,
-      regularPrice,
-      discountPrice,
+      regular_price,
+      discount_price,
       JSON.stringify(images),
-      category,
-      inStock,
-      new Date(),
+      category_id,
+      quantity,
+      is_discount_enable,
+      status,
       id,
     ],
   );
@@ -395,7 +370,7 @@ const updateProduct = async (payload: any) => {
 
 // DELETE
 const deleteProduct = async (id: any) => {
-  const result = await pool.query('DELETE FROM product WHERE id = ?', [
+  const result = await pool.query('DELETE FROM products WHERE id = ?', [
     Number(id),
   ]);
   return result;
@@ -409,8 +384,6 @@ export const ProductServices = {
   deleteProduct,
   getAllProducts,
   getProductById,
-  getProductByCategoryID,
   getRandomProduct,
-  getProductByPriceRange,
   uploadProductImage,
 };

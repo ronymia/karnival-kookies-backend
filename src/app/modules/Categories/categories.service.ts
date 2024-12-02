@@ -5,28 +5,27 @@ import { type TCreateCategoryType } from './categories.interface';
 // CREATE
 const createCategory = async (payload: TCreateCategoryType) => {
   const { name, description } = payload;
-  // Insert new category
+
+  // Correct SQL query with no trailing commas
   const [result] = (await pool.query<ResultSetHeader>(
-    'INSERT INTO category (name, description, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-    [name, description, new Date(), new Date()],
+    'INSERT INTO categories (name, description) VALUES (?, ?)',
+    [name, description],
   )) as any[];
 
   return {
     id: result?.insertId,
     name,
     description,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 };
 
 // GET ALL
 const getAllCategories = async () => {
   // Fetch all categories
-  const [categories] = await pool.query('SELECT * FROM category');
+  const [categories] = await pool.query('SELECT * FROM categories');
   // Fetch total category count
   const [totalCategoriesResult] = (await pool.query(
-    'SELECT COUNT(*) as count FROM category',
+    'SELECT COUNT(*) as count FROM categories',
   )) as any[];
   const totalCategories = totalCategoriesResult[0].count;
 
@@ -44,8 +43,8 @@ const updateCategory = async (payload: TCreateCategoryType) => {
   const { id, name, description } = payload;
   // Update the category
   const [result] = (await pool.query(
-    'UPDATE category SET name = ?, description = ?,  updatedAt = ? WHERE id = ?',
-    [name, description, new Date(), id],
+    'UPDATE categories SET name = ?, description = ? WHERE id = ?',
+    [name, description, id],
   )) as any[];
 
   return result;
@@ -54,7 +53,7 @@ const updateCategory = async (payload: TCreateCategoryType) => {
 // DELETE
 const deleteCategory = async (id: number) => {
   // Delete category
-  const result = await pool.query('DELETE FROM category WHERE id = ?', [
+  const result = await pool.query('DELETE FROM categories WHERE id = ?', [
     Number(id),
   ]);
   return result;

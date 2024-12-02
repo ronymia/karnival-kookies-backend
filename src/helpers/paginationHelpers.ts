@@ -23,7 +23,7 @@ const calculatePagination = (options: TOptions): TPaginationResult => {
   const skip = (page - 1) * perPage;
   const offset = (page - 1) * limit;
 
-  const sortBy = options.sortBy || 'createdAt';
+  const sortBy = options.sortBy || 'created_at';
   const sortOrder = options.sortOrder || 'desc';
 
   return {
