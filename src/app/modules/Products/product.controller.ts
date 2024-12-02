@@ -150,7 +150,7 @@ const deleteProduct: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const result = await ProductServices.deleteProduct(id);
+    const result = await ProductServices.deleteProduct(Number(id));
 
     // SEND RESPONSE
     sendResponse<any>(res, {
