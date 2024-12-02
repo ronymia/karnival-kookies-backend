@@ -3,10 +3,10 @@ import AppError from '../../../errors/AppError';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
-import { TProduct, TProductFilters } from './product.interface';
+import { TProduct } from './product.interface';
 
 // CREATE PRODUCT
-const createProduct = async (payload: TProduct) => {
+const createProduct = async (payload: TProduct): Promise<any> => {
   const {
     name,
     description,
@@ -174,7 +174,7 @@ const getAllClientProducts = async (
 const getAllProducts = async (
   filters: any,
   paginationOptions: TPaginationOptions,
-) => {
+): Promise<any> => {
   const {
     page,
     limit,
@@ -255,7 +255,7 @@ const getAllProducts = async (
 };
 
 //   GET SINGLE PRODUCT
-const getProductById = async (id: number) => {
+const getProductById = async (id: number): Promise<any> => {
   const [product] = (await pool.query(
     `SELECT 
       p.*, 
@@ -282,7 +282,7 @@ const getProductById = async (id: number) => {
 const getRandomProduct = async (
   filters: any,
   paginationOptions: TPaginationOptions,
-) => {
+): Promise<any> => {
   const { searchKey = '' } = filters;
   const { page = 1, perPage = 8 } = paginationOptions;
   const offset = (Number(page) - 1) * Number(perPage);
@@ -369,7 +369,7 @@ const updateProduct = async (payload: any) => {
 };
 
 // DELETE
-const deleteProduct = async (id: any) => {
+const deleteProduct = async (id: number): Promise<any> => {
   const result = await pool.query('DELETE FROM products WHERE id = ?', [
     Number(id),
   ]);
