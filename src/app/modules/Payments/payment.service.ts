@@ -23,7 +23,7 @@ const paymentIntent = async (payload: { price: number }) => {
     //   enabled: true,
     // },
   });
-  //   console.log(paymentIntent);
+
   return {
     clientSecret: paymentIntent?.client_secret,
   };

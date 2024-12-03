@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const createSchema = z.object({
   body: z.object({
-    productId: z
+    product_id: z
       .number({ required_error: 'Product ID is required' })
       .int()
       .nonnegative('Product can not be Negative Number'),

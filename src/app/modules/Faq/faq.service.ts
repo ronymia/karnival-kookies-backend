@@ -5,15 +5,13 @@ const createFaq = async (payload: any) => {
   const { question, answer } = payload;
   // Insert new FAQ
   const [result] = (await pool.query(
-    'INSERT INTO faq (question, answer, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-    [question, answer, new Date(), new Date()],
+    'INSERT INTO faq (question, answer) VALUES (?, ?)',
+    [question, answer],
   )) as any[];
   const newFaq = {
     id: result.insertId,
     question,
     answer,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
   return newFaq;
@@ -41,8 +39,8 @@ const updateFaq = async (payload: any) => {
   const { id, question, answer } = payload;
 
   const result = await pool.query(
-    'UPDATE faq SET question = ?, answer = ?,  updatedAt = ? WHERE id = ?',
-    [question, answer, new Date(), id],
+    'UPDATE faq SET question = ?, answer = ? WHERE id = ?',
+    [question, answer, id],
   );
 
   return result;

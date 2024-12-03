@@ -34,14 +34,14 @@ const getCartByEmail: RequestHandler = catchAsync(
 
     const result = await CartServices.getCartByEmail(email);
 
-    res.status(200).json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'User Cart Data fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'User Cart Data fetch successfully',
+      meta: result.meta,
+      data: result.data,
+    });
   },
 );
 

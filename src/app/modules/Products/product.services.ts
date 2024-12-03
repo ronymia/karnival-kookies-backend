@@ -175,13 +175,8 @@ const getAllProducts = async (
   filters: any,
   paginationOptions: TPaginationOptions,
 ): Promise<any> => {
-  const {
-    page,
-    limit,
-    offset,
-    sortBy = 'id',
-    sortOrder = 'ASC',
-  } = paginationHelpers.calculatePagination(paginationOptions);
+  const { page, limit, offset, sortBy, sortOrder } =
+    paginationHelpers.calculatePagination(paginationOptions);
 
   // Base query to fetch products with category information
   let query = `
@@ -217,10 +212,11 @@ const getAllProducts = async (
   }
 
   // Add sorting and pagination to the query
-  query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
-
-  // Add pagination values to filterValues
-  filterValues.push(limit, offset);
+  if (limit && page) {
+    query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
+    // Add pagination values to filterValues
+    filterValues.push(limit, offset);
+  }
 
   // Execute the query to fetch products
   const [products] = await pool.query(query, filterValues);

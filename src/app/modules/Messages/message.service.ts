@@ -1,4 +1,3 @@
-import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
 import { TMessage } from './message.interface';
@@ -8,8 +7,8 @@ const createMessage = async (payload: TMessage) => {
   const { name, email, message } = payload;
   // Insert new message into DB
   const [result] = (await pool.query(
-    'INSERT INTO message (name, email, message, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-    [name, email, message, new Date(), new Date()],
+    'INSERT INTO message (name, email, message) VALUES (?, ?, ?)',
+    [name, email, message],
   )) as any[];
 
   return {
@@ -17,8 +16,6 @@ const createMessage = async (payload: TMessage) => {
     name,
     email,
     message,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 };
 

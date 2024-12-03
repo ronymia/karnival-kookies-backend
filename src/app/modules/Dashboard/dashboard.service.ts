@@ -9,18 +9,18 @@ const adminDashboard = async () => {
     `SELECT COUNT(*) AS totalOrders FROM checkout`,
   )) as any[];
 
-  // Get orders from the last 7 days using the createdAt field
+  // Get orders from the last 7 days using the created_at field
   const [last7DaysOrders] = (await pool.query(`
         SELECT COUNT(*) AS last7DaysOrders
         FROM checkout
-        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       `)) as any[];
 
-  // Get orders from the last 30 days using the createdAt field
+  // Get orders from the last 30 days using the created_at field
   const [last30DaysOrders] = (await pool.query(`
         SELECT COUNT(*) AS last30DaysOrders
         FROM checkout
-        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
       `)) as any[];
 
   // Get total sales
@@ -32,14 +32,14 @@ const adminDashboard = async () => {
   const [last7DaysSales] = (await pool.query(`
             SELECT SUM(totalPayableAmount) AS last7DaysSales
             FROM checkout
-            WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
           `)) as any[];
 
   // Get sales from the last 30 days
   const [last30DaysSales] = (await pool.query(`
             SELECT SUM(totalPayableAmount) AS last30DaysSales
             FROM checkout
-            WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
           `)) as any[];
 
   // Get total products
@@ -93,7 +93,7 @@ const userDashboard = async (email: string) => {
     `
       SELECT COUNT(*) AS last7DaysOrders
       FROM checkout
-      WHERE userEmail = ? AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
+      WHERE userEmail = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
     [email],
   )) as any[];
 
@@ -102,7 +102,7 @@ const userDashboard = async (email: string) => {
     `
       SELECT COUNT(*) AS last30DaysOrders
       FROM checkout
-      WHERE userEmail = ? AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)`,
+      WHERE userEmail = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`,
     [email],
   )) as any[];
 
@@ -120,7 +120,7 @@ const userDashboard = async (email: string) => {
     `
       SELECT SUM(totalPayableAmount) AS last7DaysSpent
       FROM checkout
-      WHERE userEmail = ? AND createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
+      WHERE userEmail = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
     [email],
   )) as any[];
 
@@ -129,7 +129,7 @@ const userDashboard = async (email: string) => {
     `
       SELECT SUM(totalPayableAmount) AS last30DaysSpent
       FROM checkout
-      WHERE userEmail = ? AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)`,
+      WHERE userEmail = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`,
     [email],
   )) as any[];
 

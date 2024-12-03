@@ -32,7 +32,7 @@ const registerUser = async (payload: IRegisterUser) => {
 
   // CREATE NEW USER
   const [result] = (await pool.query(
-    'INSERT INTO users (role, name, phone, email, password, code, isVerified, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO users (role, name, phone, email, password, code, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       role,
       name,
@@ -41,8 +41,6 @@ const registerUser = async (payload: IRegisterUser) => {
       password,
       hashedVerificationCode,
       role === ENUM_USER_ROLE.CUSTOMER ? false : true,
-      new Date(),
-      new Date(),
     ],
   )) as any[];
 
@@ -145,8 +143,6 @@ const loginUser = async (payload: TLoginUser) => {
         phone: user?.phone,
         email: user?.email,
         isVerified: user?.isVerified,
-        createdAt: user?.createdAt,
-        updatedAt: user?.updatedAt,
       },
     };
   }
@@ -173,8 +169,6 @@ const loginUser = async (payload: TLoginUser) => {
       phone: user?.phone,
       email: user?.email,
       isVerified: user?.isVerified,
-      createdAt: user?.createdAt,
-      updatedAt: user?.updatedAt,
     },
   };
 };
@@ -375,8 +369,6 @@ const getCurrentUser = async (token: Secret) => {
           email: result.email,
           token,
           isVerified: result.isVerified,
-          createdAt: result.createdAt,
-          updatedAt: result.updatedAt,
         },
       };
     } else {

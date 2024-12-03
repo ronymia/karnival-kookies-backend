@@ -5,15 +5,8 @@ const createDiscount = async (payload: any) => {
   const { code, discountType, discountAmount, minimumSpend } = payload;
   // Insert new category
   const [result] = (await pool.query(
-    'INSERT INTO discount (code, discountType, discountAmount, minimumSpend, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-    [
-      code,
-      discountType,
-      parseFloat(discountAmount),
-      parseFloat(minimumSpend),
-      new Date(),
-      new Date(),
-    ],
+    'INSERT INTO discount (code, discountType, discountAmount, minimumSpend) VALUES (?, ?, ?, ?)',
+    [code, discountType, parseFloat(discountAmount), parseFloat(minimumSpend)],
   )) as any[];
   const newDiscountCode = {
     id: result.insertId,
@@ -21,8 +14,6 @@ const createDiscount = async (payload: any) => {
     discountType,
     discountAmount: parseFloat(discountAmount),
     minimumSpend: parseFloat(minimumSpend),
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
   return newDiscountCode;

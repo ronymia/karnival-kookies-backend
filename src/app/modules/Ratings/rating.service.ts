@@ -30,8 +30,6 @@ const createRating = async (payload: any) => {
     email,
     rating: parseInt(rating),
     comment,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
   //
@@ -40,7 +38,7 @@ const createRating = async (payload: any) => {
 // GET ALL
 const getAllRatings = async (id: any) => {
   const [reviews] = (await pool.query(
-    'SELECT * FROM review WHERE productId = ? ORDER BY createdAt DESC',
+    'SELECT * FROM review WHERE productId = ? ORDER BY created_at DESC',
     [parseInt(id)],
   )) as any[];
 

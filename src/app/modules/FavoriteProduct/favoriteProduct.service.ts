@@ -22,7 +22,6 @@ const addFavoriteProduct = async (
 };
 
 // REMOVE FAVORITE PRODUCT
-// REMOVE FAVORITE PRODUCT
 const removeFavoriteProduct = async (
   payload: IFavoriteProduct,
 ): Promise<any> => {

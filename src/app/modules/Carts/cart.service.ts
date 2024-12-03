@@ -7,12 +7,12 @@ import { EmailHelpers } from '../../../helpers/emailHelpers';
 
 //   CREATE A NEW CART
 const createCart = async (payload: any): Promise<any> => {
-  const { productId, email, quantity } = payload;
+  const { product_id, email, quantity } = payload;
 
   // Check if cart item already exists
   const [exists] = (await pool.query(
-    'SELECT * FROM cart WHERE email = ? AND productId = ?',
-    [email, productId],
+    'SELECT * FROM carts WHERE email = ? AND product_id = ?',
+    [email, product_id],
   )) as any[];
 
   //
@@ -22,8 +22,8 @@ const createCart = async (payload: any): Promise<any> => {
 
   // Insert new cart item
   const [result] = await pool.query(
-    'INSERT INTO cart (productId, email, quantity, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-    [productId, email, quantity, new Date(), new Date()],
+    'INSERT INTO carts (product_id, email, quantity) VALUES (?, ?, ?)',
+    [product_id, email, quantity],
   );
 
   //
@@ -32,49 +32,49 @@ const createCart = async (payload: any): Promise<any> => {
 
 // GET ALL CART USER SPECIFIC BY EMAIL
 const getCartByEmail = async (email: string) => {
-  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
+  // Query to get cart items with user and product details
+  const cartQuery = `
+    SELECT 
+      c.*,
+      JSON_OBJECT(
+        'id', u.id,
+        'name', u.name,
+        'email', u.email
+      ) AS user,
+      JSON_OBJECT(
+        'id', p.id,
+        'name', p.name,
+        'regular_price', p.regular_price,
+        'discount_price', p.discount_price,
+        'category_id', p.category_id,
+        'images', p.images
+      ) AS product
+    FROM carts c
+    LEFT JOIN users u ON c.email = u.email
+    LEFT JOIN products p ON c.product_id = p.id
+    WHERE c.email = ?;
+  `;
+
+  // Execute the query
+  const [cartItems] = (await pool.query(cartQuery, [email])) as any[];
+
+  // Query to get total count of cart items
+  const totalItemQuery = `
+    SELECT COUNT(*) as count
+    FROM carts
+    WHERE email = ?;
+  `;
+
+  const [totalItemResult] = (await pool.query(totalItemQuery, [
     email,
   ])) as any[];
-
-  const user = rows[0];
-
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Invalid Email');
-  }
-  // Get cart items
-  const [cartItems] = (await pool.query('SELECT * FROM cart WHERE email = ?', [
-    email,
-  ])) as any[];
-
-  // Get total count of cart items
-  const [totalItemResult] = (await pool.query(
-    'SELECT COUNT(*) as count FROM cart WHERE email = ?',
-    [email],
-  )) as any[];
   const totalItem = totalItemResult[0].count;
 
-  // Get product details for cart items
-  const productIds = cartItems.map((item: any) => item.productId);
-  const [products] = (await pool.query(
-    'SELECT * FROM product WHERE id IN (?)',
-    [productIds],
-  )) as any[];
-
-  // Combine cart items with product details
-  const carts = cartItems.map((item: any) => {
-    const product = products.find((p: any) => p.id === item.productId);
-    return {
-      ...item,
-      product: {
-        ...product,
-        images: JSON.parse(product?.images),
-      },
-    };
-  });
-
   return {
-    data: carts,
-    total: totalItem,
+    meta: {
+      total: totalItem,
+    },
+    data: cartItems,
   };
 };
 
@@ -253,7 +253,7 @@ const checkOut = async (payload: any) => {
 
   // Insert checkout
   const [result] = await pool.query(
-    'INSERT INTO checkout (userEmail, checkoutInfo, paymentInfo, paymentMethod, totalPayableAmount,orderId,status, isPaid, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO checkout (userEmail, checkoutInfo, paymentInfo, paymentMethod, totalPayableAmount,orderId,status, isPaid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     [
       userEmail,
       JSON.stringify(checkoutInfo),
@@ -263,8 +263,6 @@ const checkOut = async (payload: any) => {
       orderId,
       status,
       isPaid,
-      new Date(),
-      new Date(),
     ],
   );
   // console.log({ result });

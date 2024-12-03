@@ -20,8 +20,6 @@ const orderCheckIn = async (payload: IOrder): Promise<any> => {
     notes,
   } = payload;
 
-  console.log({ payload });
-
   // Start a transaction
   const connection = await pool.getConnection();
   await connection.beginTransaction();
@@ -69,7 +67,6 @@ const orderCheckIn = async (payload: IOrder): Promise<any> => {
 };
 
 // GET ALL ORDERS
-
 const getAllOrders = async (
   filters: Partial<Record<TOrderFilterableFields, any>>,
   paginationOptions: TPaginationOptions,
@@ -105,9 +102,11 @@ const getAllOrders = async (
     }
   });
 
-  // Add grouping and pagination
-  query += ` GROUP BY o.id LIMIT ? OFFSET ?`;
-  queryParams.push(limit, offset);
+  if (limit && page) {
+    // Add grouping and pagination
+    query += ` GROUP BY o.id LIMIT ? OFFSET ?`;
+    queryParams.push(limit, offset);
+  }
 
   // Execute the query
   const [orders] = (await pool.query(query, queryParams)) as any[];
@@ -124,6 +123,86 @@ const getAllOrders = async (
       total: totalCount[0]?.count,
     },
     data: orders,
+  };
+};
+
+// GET USER SPECIF ORDER
+const getOrderByUserId = async (
+  user_id: number,
+  filters: any,
+  paginationOptions: TPaginationOptions,
+): Promise<any> => {
+  const {
+    page,
+    limit,
+    offset,
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+  } = paginationHelpers.calculatePagination(paginationOptions);
+
+  // Base query with aggregation
+  let query = `
+    SELECT 
+      o.*,
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'product_id', oi.product_id,
+          'quantity', oi.quantity,
+          'price', oi.price
+        )
+      ) AS order_items
+    FROM orders o
+    LEFT JOIN order_items oi ON o.id = oi.order_id
+    WHERE 1=1
+  `;
+  const queryParams: any[] = [];
+
+  // Apply user_id filter if provided
+  if (user_id) {
+    query += ` AND o.user_id = ?`;
+    queryParams.push(user_id);
+  }
+
+  // Add GROUP BY clause for proper aggregation
+  query += ` GROUP BY o.id`;
+
+  // Apply sorting
+  query += ` ORDER BY ${sortBy} ${sortOrder}`;
+
+  // Add pagination limits
+  if (limit && page) {
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(limit, offset);
+  }
+
+  // Query to count total orders for user
+  let totalOrdersQuery = `
+    SELECT COUNT(*) AS total_orders
+    FROM orders o
+    WHERE 1=1
+  `;
+  const totalOrdersParams: any[] = [];
+
+  if (user_id) {
+    totalOrdersQuery += ` AND o.user_id = ?`;
+    totalOrdersParams.push(user_id);
+  }
+
+  // Execute both queries using Promise.all
+  const [[orders], [totalOrders]] = await Promise.all([
+    pool.query(query, queryParams),
+    pool.query<any[]>(totalOrdersQuery, totalOrdersParams),
+  ]);
+
+  // Return result with data and total count
+  return {
+    meta: {
+      page,
+      limit,
+      total: totalOrders[0]?.total_orders || 0,
+      totalPages: Math.ceil((totalOrders[0]?.total_orders || 0) / limit!),
+    },
+    data: orders, // Paginated orders with items
   };
 };
 
@@ -229,4 +308,5 @@ export const OrderServices = {
   orderChangeStatus,
   orderDelete,
   getAllOrders,
+  getOrderByUserId,
 };

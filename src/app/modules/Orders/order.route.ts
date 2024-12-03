@@ -28,6 +28,8 @@ router.post('/check-in', verifyToken, OrderControllers.orderCheckIn);
 
 // ORDER GET ALL ORDERS
 router.get('/', verifyToken, OrderControllers.getAllOrders);
+// ORDER GET BY USER ID
+router.get('/:user_id', verifyToken, OrderControllers.getOrderByUserId);
 
 // UPDATE ORDER STATUS
 router.put(

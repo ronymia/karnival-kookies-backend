@@ -23,7 +23,7 @@ const orderCheckIn: RequestHandler = catchAsync(
     });
   },
 );
-// UPDATE CART
+// GET ALL ORDERS
 const getAllOrders: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const filters = pick(req.query, orderFilterableFields);
@@ -35,7 +35,30 @@ const getAllOrders: RequestHandler = catchAsync(
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'Order place successfully',
+      message: 'Order fetch successfully',
+      meta: result?.meta,
+      data: result?.data,
+    });
+  },
+);
+// GET ALL ORDER BY USER ID
+const getOrderByUserId: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const filters = pick(req.query, orderFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
+    const user_id = req.params?.user_id;
+
+    const result = await OrderServices.getOrderByUserId(
+      Number(user_id),
+      filters,
+      paginationOptions,
+    );
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Order fetch successfully',
       meta: result.meta,
       data: result.data,
     });
@@ -70,4 +93,5 @@ export const OrderControllers = {
   orderChangeStatus,
   //   orderDelete,
   getAllOrders,
+  getOrderByUserId,
 };
