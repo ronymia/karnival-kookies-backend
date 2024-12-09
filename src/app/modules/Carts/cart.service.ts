@@ -149,7 +149,7 @@ const updateCart = async (payload: any): Promise<any> => {
   const { exists, quantity } = payload;
 
   const result = await pool.query(
-    'UPDATE cart SET quantity = ?, WHERE id = ?',
+    'UPDATE carts SET quantity = ?, WHERE id = ?',
     [quantity, exists.id],
   );
 
@@ -288,7 +288,7 @@ const updateCartStatus = async (id: any, payload: any) => {
 
 // DELETE CART
 const deleteCart = async (id: number) => {
-  const [result] = await pool.query('DELETE FROM cart WHERE id = ?', [id]);
+  const [result] = await pool.query('DELETE FROM carts WHERE id = ?', [id]);
 
   return result;
 };
@@ -301,7 +301,7 @@ const deleteBulkCart = async (payload: any) => {
 
   // Execute the DELETE query for all the provided payload
   const [result] = await pool.query(
-    `DELETE FROM cart WHERE id IN (${placeholders})`,
+    `DELETE FROM carts WHERE id IN (${placeholders})`,
     payload,
   );
   return result;

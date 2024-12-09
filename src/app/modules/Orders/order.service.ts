@@ -18,6 +18,7 @@ const orderCheckIn = async (payload: IOrder): Promise<any> => {
     order_items,
     payment_method,
     notes,
+    total_amount,
   } = payload;
 
   // Start a transaction
@@ -45,8 +46,13 @@ const orderCheckIn = async (payload: IOrder): Promise<any> => {
       await connection.query(
         `INSERT INTO order_items (order_id, product_id, quantity, price) 
         VALUES (?, ?, ?, ?)`,
-        [orderResult.insertId, item.product_id, item.quantity, item.price],
+        [orderResult.insertId, item.product_id, item.quantity, total_amount],
       );
+
+      // DELETE FROM CART
+      await connection.query(`DELETE FROM carts WHERE product_id=?`, [
+        item.product_id,
+      ]);
     }
 
     // COMMIT THE TRANSACTION IF BOTH INSERT
@@ -59,6 +65,7 @@ const orderCheckIn = async (payload: IOrder): Promise<any> => {
     // ROLLBACK TRANSACTION IN CASE GOT OF AN ERROR
     await connection.rollback();
 
+    console.log({ error });
     throw new AppError(httpStatus.BAD_REQUEST, 'Failed to place order');
   } finally {
     // Release the connection
