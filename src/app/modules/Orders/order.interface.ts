@@ -6,6 +6,7 @@ type TOrderItems = {
 
 export interface IOrder {
   id: number; // Auto-incremented order ID
+  total_amount?: number; // Auto-incremented order ID
   user_id: number; // Foreign key referencing the user table's ID
   order_id: string; // Unique order identifier
   tracking_number: string; // Tracking number for the order
