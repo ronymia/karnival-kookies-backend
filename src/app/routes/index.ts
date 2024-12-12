@@ -14,6 +14,7 @@ import { PackageRoutes } from '../modules/Package/package.route';
 import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
 import { FavoriteProductRoutes } from '../modules/FavoriteProduct/favoriteProduct.route';
 import { OrderRoutes } from '../modules/Orders/order.route';
+import { MetaDataRoutes } from '../modules/MetaData/metaData.route';
 
 const router = express.Router();
 
@@ -82,6 +83,10 @@ const moduleRoutes = [
   {
     path: '/favorite-products',
     route: FavoriteProductRoutes,
+  },
+  {
+    path: '/meta-data',
+    route: MetaDataRoutes,
   },
 ];
 

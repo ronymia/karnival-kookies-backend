@@ -87,8 +87,6 @@ const updatePackage = async (payload: Partial<IPackage>): Promise<any> => {
 };
 // DELETE PACKAGE
 const deletePackage = async (ids: number[]): Promise<any> => {
-  console.log({ first: ids });
-
   // GENERATE PLACEHOLDER FOR QUERY
   const placeholders = ids.map(() => '?');
 
