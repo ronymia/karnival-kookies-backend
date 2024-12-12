@@ -200,7 +200,7 @@ const getAllProducts = async (
 
   // Dynamically build the filter conditions
   Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
+    if (value !== undefined && value !== null && value !== '') {
       filterConditions.push(`p.${key} = ?`);
       filterValues.push(value);
     }
