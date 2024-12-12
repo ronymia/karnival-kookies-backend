@@ -20,7 +20,7 @@ const createMetaData = async (payload: any): Promise<any> => {
 };
 
 // GET ALL META DATA
-const getAllMetaData = async (url): Promise<any> => {
+const getAllMetaData = async (url: any): Promise<any> => {
   // Initialize the query and parameters
   let query = `SELECT * FROM meta_data`;
   const params: any[] = [];
