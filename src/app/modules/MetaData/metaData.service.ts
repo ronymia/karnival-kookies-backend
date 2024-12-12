@@ -1,28 +1,40 @@
 import { ResultSetHeader } from 'mysql2';
 import { pool } from '../../../shared/mySQL';
 
-// CREATE
+// CREATE META DATA
 const createMetaData = async (payload: any): Promise<any> => {
-  const { title, description } = payload;
+  const { url, title, description } = payload;
 
   // Correct SQL query with no trailing commas
   const [result] = (await pool.query<ResultSetHeader>(
-    'INSERT INTO meta_data (title, description) VALUES (?, ?)',
+    'INSERT INTO meta_data (url,title, description) VALUES (?, ?, ?)',
     [title, description],
   )) as any[];
 
   return {
     id: result?.insertId,
+    url,
     title,
     description,
   };
 };
 
-// GET ALL
-const getAllMetaData = async (): Promise<any> => {
-  // Fetch all categories
-  const [metadata] = await pool.query('SELECT * FROM meta_data');
-  // Fetch total category count
+// GET ALL META DATA
+const getAllMetaData = async (url): Promise<any> => {
+  // Initialize the query and parameters
+  let query = `SELECT * FROM meta_data`;
+  const params: any[] = [];
+
+  // Add a WHERE clause if a URL is provided
+  if (url) {
+    query += ` WHERE url = ?`;
+    params.push(url);
+  }
+
+  // Execute the main query
+  const [metadata] = await pool.query(query, params);
+
+  // Get the total count of meta_data entries
   const [totalMetaDataResult] = (await pool.query(
     'SELECT COUNT(*) as count FROM meta_data',
   )) as any[];
@@ -36,7 +48,7 @@ const getAllMetaData = async (): Promise<any> => {
   };
 };
 
-//  GET BY ID
+//  GET META DATA BY ID
 const getMetaDataById = async (id: number): Promise<any> => {
   const [result] = await pool.query('SELECT * FROM meta_data WHERE id = ?', [
     Number(id),
@@ -44,20 +56,28 @@ const getMetaDataById = async (id: number): Promise<any> => {
 
   return result;
 };
+//  GET META DATA BY URL
+const getMetaDataByUrl = async (url: string): Promise<any> => {
+  const [result] = await pool.query('SELECT * FROM meta_data WHERE url = ?', [
+    url,
+  ]);
 
-// UPDATE
+  return result;
+};
+
+// UPDATE META DATA
 const updateMetaData = async (payload: any): Promise<any> => {
-  const { id, title, description } = payload;
+  const { id, url, title, description } = payload;
   // Update
   const [result] = (await pool.query(
-    'UPDATE meta_data SET title = ?, description = ? WHERE id = ?',
-    [title, description, id],
+    'UPDATE meta_data SET url=?, title = ?, description = ? WHERE id = ?',
+    [url, title, description, id],
   )) as any[];
 
   return result;
 };
 
-// DELETE
+// DELETE META DATA
 const deleteMetaData = async (ids: number[]): Promise<any> => {
   // GENERATE PLACEHOLDER FOR QUERY
   const placeholders = ids.map(() => '?');
@@ -75,6 +95,7 @@ const deleteMetaData = async (ids: number[]): Promise<any> => {
 export const MetaDataServices = {
   createMetaData,
   getMetaDataById,
+  getMetaDataByUrl,
   getAllMetaData,
   updateMetaData,
   deleteMetaData,
