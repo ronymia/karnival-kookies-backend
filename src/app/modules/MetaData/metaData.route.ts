@@ -39,8 +39,6 @@ router.get('/', MetaDataControllers.getAllMetaData);
 
 // GET META DATA BY ID
 router.get('/:id', MetaDataControllers.getMetaDataById);
-// GET META DATA BY URL
-router.get('/', MetaDataControllers.getMetaDataByUrl);
 
 // UPDATE META DATA
 router.patch(

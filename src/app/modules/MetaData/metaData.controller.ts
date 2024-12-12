@@ -44,21 +44,6 @@ const getAllMetaData: RequestHandler = catchAsync(
   },
 );
 
-// GET META DATA BY URL
-const getMetaDataByUrl: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const { url } = req.query;
-    const result = await MetaDataServices.getMetaDataByUrl(url);
-
-    // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Meta Data fetch by url successfully',
-      data: result,
-    });
-  },
-);
 // GET META DATA BY ID
 const getMetaDataById: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -124,7 +109,6 @@ const deleteMetaData: RequestHandler = catchAsync(
 export const MetaDataControllers = {
   createMetaData,
   getMetaDataById,
-  getMetaDataByUrl,
   getAllMetaData,
   updateMetaData,
   deleteMetaData,

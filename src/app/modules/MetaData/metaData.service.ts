@@ -56,14 +56,6 @@ const getMetaDataById = async (id: number): Promise<any> => {
 
   return result;
 };
-//  GET META DATA BY URL
-const getMetaDataByUrl = async (url: string): Promise<any> => {
-  const [result] = await pool.query('SELECT * FROM meta_data WHERE url = ?', [
-    url,
-  ]);
-
-  return result;
-};
 
 // UPDATE META DATA
 const updateMetaData = async (payload: any): Promise<any> => {
@@ -95,7 +87,6 @@ const deleteMetaData = async (ids: number[]): Promise<any> => {
 export const MetaDataServices = {
   createMetaData,
   getMetaDataById,
-  getMetaDataByUrl,
   getAllMetaData,
   updateMetaData,
   deleteMetaData,
