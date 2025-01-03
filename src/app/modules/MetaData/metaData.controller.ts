@@ -29,7 +29,12 @@ const getAllMetaData: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     // const filters = pick(req.query, packageFilterableFields);
     // const paginationOptions = pick(req.query, paginationFields);
-    const { url } = req.query;
+    // const { url } = req.query;
+    const url = req.query.url as string | undefined;
+
+    if (url && typeof url !== 'string') {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid URL parameter');
+    }
 
     const result = await MetaDataServices.getAllMetaData(url);
 
@@ -81,6 +86,9 @@ const updateMetaData: RequestHandler = catchAsync(
 const deleteMetaData: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { ids } = req.params;
+    if (!ids || typeof ids !== 'string') {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid IDs parameter');
+    }
 
     // FILTER ID AND  CONVERT TO NUMBER
     const parsedIds = ids
