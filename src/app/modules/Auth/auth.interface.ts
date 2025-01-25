@@ -23,10 +23,8 @@ export interface IRegisterUser {
   id: number;
   email: string;
   password: string;
-  name: string;
-  phone: string;
   role: string;
-  isVerified: boolean;
+  is_email_verified: boolean;
 }
 
 export type TRefreshTokenResponse = {

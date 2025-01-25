@@ -5,7 +5,6 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import routes from './app/routes';
 import notFoundRoute from './app/middlewares/notFoundRoute';
 import path from 'path';
-import cron from 'node-cron';
 import { EmailSend } from './app/cronJobs/newsletter';
 import httpStatus from 'http-status';
 
@@ -29,14 +28,14 @@ app.use(express.urlencoded({ extended: true }));
 EmailSend.sendWeeklyNewsletters();
 
 // HOME ROUTE FOR CHECK
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.status(httpStatus.OK).json({
     message: 'Dear Developer Server is running',
   });
 });
 
 // Application routes
-app.use('/api/v1', routes);
+app.use('/api', routes);
 
 //global error handler
 app.use(globalErrorHandler);

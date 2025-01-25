@@ -21,71 +21,70 @@ const router = express.Router();
 const moduleRoutes = [
   // ... routes
   {
-    path: '/auth',
+    path: '/v1.0/auth',
     route: AuthRoutes,
   },
   {
-    path: '/users',
+    path: '/v1.0/users',
     route: UserRoutes,
   },
   {
-    path: '/products',
+    path: '/v1.0/products',
     route: ProductRoutes,
   },
   // {
-  //   path: '/permissions',
-  //   route: PermissionRoutes,
+  //   path: '/v1.0/permission //   route: PermissionRoutes,
   // },
   {
-    path: '/dashboard',
+    path: '/v1.0/dashboard',
     route: DashboardRoutes,
   },
   {
-    path: '/carts',
+    path: '/v1.0/carts',
     route: CartRoutes,
   },
   {
-    path: '/orders',
+    path: '/v1.0/orders',
     route: OrderRoutes,
   },
   {
-    path: '/payments',
+    path: '/v1.0/payments',
     route: PaymentRoutes,
   },
   {
-    path: '/categories',
+    path: '/v1.0/categories',
     route: CategoryRoutes,
   },
   {
-    path: '/messages',
+    path: '/v1.0/messages',
     route: MessageRoutes,
   },
   {
-    path: '/faqs',
+    path: '/v1.0/faqs',
     route: FaqRoutes,
   },
   {
-    path: '/discounts',
+    path: '/v1.0/discounts',
     route: DiscountRoutes,
   },
   {
-    path: '/ratings',
+    path: '/v1.0/ratings',
     route: RatingRoutes,
   },
   {
-    path: '/packages',
+    path: '/v1.0/packages',
     route: PackageRoutes,
   },
   {
-    path: '/subscribers',
+    path: '/v1.0/subscribers',
     route: SubscribersRoutes,
   },
   {
-    path: '/favorite-products',
+    path: '/v1.0/favorite1.0',
     route: FavoriteProductRoutes,
   },
   {
-    path: '/meta-data',
+    path: '/v1.0/meta1.0',
     route: MetaDataRoutes,
   },
 ];

@@ -8,58 +8,61 @@ import { pool } from '../../../shared/mySQL';
 import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
-import { ENUM_USER_ROLE } from '../../../enums/user';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 // USER REGISTER FUNCTION
 const registerUser = async (payload: IRegisterUser) => {
   // PAYLOAD EXTRACT
-  const { email, password, phone, name, role } = payload;
+  const { email, password, role } = payload;
 
   // CHECKING USER EXISTENT
-  const [accounts] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-    email,
-  ])) as any[];
+  const [existAccount] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [email],
+  );
 
   // IF EMAIL ALREADY REGISTER THEN THROW ERROR
-  if (accounts.length > 0) {
-    throw new AppError(httpStatus.CONFLICT, 'Account already registered');
+  if (existAccount.length > 0) {
+    throw new AppError(
+      httpStatus.CONFLICT,
+      `Account already registered with this email: ${email}`,
+    );
   }
 
   // GENERATE 4 DIGIT EMAIL VERIFICATION CODE
   const verificationCode = await generateCode();
-  const hashedVerificationCode =
-    await PasswordHelpers.passwordHash(verificationCode);
+  const hashedVerificationCode = await PasswordHelpers.passwordHash(
+    verificationCode.toString(),
+  );
 
   // CREATE NEW USER
-  const [result] = (await pool.query(
-    'INSERT INTO users (role, name, phone, email, password, code, isVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [
-      role,
-      name,
-      phone,
-      email,
-      password,
-      hashedVerificationCode,
-      role === ENUM_USER_ROLE.CUSTOMER ? false : true,
-    ],
-  )) as any[];
+  const [result] = await pool.query<ResultSetHeader[]>(
+    'INSERT INTO users (email, password, role, code) VALUES (?, ?, ?, ?)',
+    [email, password, role, hashedVerificationCode],
+  );
+
+  console.log({ created: result, type: typeof result });
 
   // IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL
-  if (result?.insertId && role === ENUM_USER_ROLE.CUSTOMER) {
-    try {
-      await EmailHelpers.verifyUserMail(name, email, verificationCode);
-      return { message: 'Verification Code sent', email };
-    } catch (err) {
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to send verification email',
-      );
-    }
-  }
+  // if (
+  //   result?.length > 0 &&
+  //   result[0]?.insertId &&
+  //   role === ENUM_USER_ROLE.CUSTOMER
+  // ) {
+  //   try {
+  //     await EmailHelpers.verifyUserMail(name, email, verificationCode);
+  //     return { message: 'Verification Code sent', email };
+  //   } catch (err) {
+  //     throw new AppError(
+  //       httpStatus.INTERNAL_SERVER_ERROR,
+  //       'Failed to send verification email',
+  //     );
+  //   }
+  // }
 
-  if (role !== ENUM_USER_ROLE.CUSTOMER) {
-    return { id: result?.id, name, email, role, phone };
-  }
+  // if (role !== ENUM_USER_ROLE.CUSTOMER) {
+  //   return { id: result?.id, name, email, role, phone };
+  // }
   // ACCESS TOKEN
   const accessToken = JwtHelpers.createToken(
     { email, role },
@@ -78,7 +81,7 @@ const registerUser = async (payload: IRegisterUser) => {
   return {
     accessToken,
     refreshToken,
-    user: { id: result?.id, name, email, role, phone },
+    user: { id: result[0]?.insertId, email, role },
   };
 };
 
@@ -87,65 +90,58 @@ const loginUser = async (payload: TLoginUser) => {
   const { email, password } = payload;
 
   // FIND USER ON DATABASE
-  const [rows]: [any[], any] = await pool.query(
+  const [existAccount] = await pool.query<RowDataPacket[]>(
     'SELECT * FROM `users` WHERE `email` = ?',
     [email],
   );
-  const user = rows[0];
-
-  //VERIFY PASSWORD MATCH
-  if (!(await PasswordHelpers.passwordMatch(password, user.password))) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'Password do not match');
-  }
-  //   IF USER NOT FOUND
-  // IF NOT EXIST
-  if (!user) {
+  const user = existAccount[0];
+  // IF USER NOT FOUND
+  if (existAccount.length === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not Found');
   }
 
-  // CHECK PASSWORD
+  // VERIFY PASSWORD MATCH
+
   const isPasswordMatch =
     user.password &&
     (await PasswordHelpers.passwordMatch(password, user.password));
+
   if (!isPasswordMatch) {
-    throw new AppError(httpStatus.UNAUTHORIZED, ' Password incorrect');
+    throw new AppError(httpStatus.UNAUTHORIZED, 'Password incorrect');
   }
 
-  // IF USER UNVERIFIED
-  if (user && !user?.isVerified) {
-    // EMAIL VERIFICATION CODE
-    const verificationCode = await generateCode();
-    console.log(verificationCode);
-    const hashedCode = await PasswordHelpers.passwordHash(verificationCode);
+  // IF USER EMAIL IS UNVERIFIED
+  // if (!!user && !user?.is_email_verified) {
+  //   // EMAIL VERIFICATION CODE
+  //   const verificationCode = await generateCode();
+  //   const hashedCode = await PasswordHelpers.passwordHash(verificationCode);
 
-    await pool.query('UPDATE users SET code = ? WHERE email = ?', [
-      hashedCode,
-      user?.email,
-    ]);
+  //   // UPDATE CODE ON DATABASE
+  //   await pool.query('UPDATE users SET code = ? WHERE email = ?', [
+  //     hashedCode,
+  //     user?.email,
+  //   ]);
 
-    //  SEND VERIFICATION CODE INTO MAIL
-    await EmailHelpers.verifyUserMail(
-      user?.name,
-      user?.email,
-      verificationCode,
-    );
+  //   //  SEND VERIFICATION CODE INTO MAIL
+  //   await EmailHelpers.verifyUserMail(
+  //     user?.name,
+  //     user?.email,
+  //     verificationCode,
+  //   );
 
-    // IF USER UNVERIFIED
-    return {
-      accessToken: null,
-      refreshToken: null,
-      user: {
-        id: user?.id,
-        need_to_verify: true,
-        message: 'Code sent',
-        role: user?.role,
-        name: user?.name,
-        phone: user?.phone,
-        email: user?.email,
-        isVerified: user?.isVerified,
-      },
-    };
-  }
+  //   // IF USER UNVERIFIED
+  //   return {
+  //     accessToken: null,
+  //     refreshToken: null,
+  //     user: {
+  //       id: user?.id,
+  //       message: 'Code sent',
+  //       role: user?.role,
+  //       email: user?.email,
+  //       is_email_verified: user?.is_email_verified,
+  //     },
+  //   };
+  // }
 
   // create JWT token and refresh token
   const accessToken = JwtHelpers.createToken(
@@ -165,10 +161,8 @@ const loginUser = async (payload: TLoginUser) => {
     user: {
       id: user?.id,
       role: user?.role,
-      name: user?.name,
-      phone: user?.phone,
       email: user?.email,
-      isVerified: user?.isVerified,
+      is_email_verified: user?.is_email_verified,
     },
   };
 };

@@ -1,26 +1,10 @@
-import { RequestHandler, Request, Response, NextFunction } from 'express';
+import { RequestHandler, Request, Response, CookieOptions } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
 import { AuthServices } from './auth.service';
 import config from '../../../config';
 import sendResponse from '../../../shared/sendResponse';
 import { PasswordHelpers } from '../../../helpers/passwordHelpers';
-
-//   JWT TOKEN
-// router.post("/jwt", async (req, res) => {
-//   const user = req.body;
-//   const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
-//     expiresIn: "7d",
-//   });
-//   res
-//     .cookie("token", token, {
-//       httpOnly: true,
-//       secure: true,
-//       sameSite: "none",
-//       maxAge: 7 * 24 * 60 * 60 * 1000,
-//     })
-//     .json({ success: true });
-// });
 
 //USER REGISTER
 const RegisterUser: RequestHandler = catchAsync(
@@ -35,11 +19,11 @@ const RegisterUser: RequestHandler = catchAsync(
       await AuthServices.registerUser(registerData);
 
     // SET REFRESH TOKEN TO COOKIE
-    const cookieOptions = {
+    const cookieOptions: CookieOptions = {
       secure: config.node_env === 'production',
       httpOnly: true,
-      // sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
     };
     res.cookie('refresh_token', refreshToken, cookieOptions);
 
@@ -60,21 +44,22 @@ const loginUser: RequestHandler = catchAsync(
 
     const { refreshToken, ...result } = await AuthServices.loginUser(loginData);
 
-    // Set the refresh token to cookie
-    res
-      .cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies only in production
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' for cross-origin in production, 'lax' for local
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      })
-      .status(httpStatus.OK)
-      .json({
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'User logged in successfully',
-        data: result,
-      });
+    // SET REFRESH TOKEN TO COOKIE
+    const cookieOptions: CookieOptions = {
+      secure: config.node_env === 'production',
+      httpOnly: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
+    };
+    res.cookie('refresh_token', refreshToken, cookieOptions);
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'user Login successfully',
+      data: result,
+    });
   },
 );
 
