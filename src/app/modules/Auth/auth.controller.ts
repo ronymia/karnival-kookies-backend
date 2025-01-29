@@ -75,7 +75,7 @@ const refreshToken: RequestHandler = catchAsync(
       secure: config.node_env === 'product',
       httpOnly: true,
     };
-    res.cookie('refresh_token', result, cookieOptions);
+    res.cookie('refresh_token', cookieOptions);
 
     //
     sendResponse<any>(res, {
@@ -115,15 +115,10 @@ const resetPassword: RequestHandler = catchAsync(
 // LOGOUT
 const logOut: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // SET REFRESH TOKEN TO COOKIE
-    const cookieOptions = {
-      secure: config.node_env === 'product',
-      httpOnly: true,
-      maxAge: 0,
-    };
-    res.clearCookie('refresh_token', cookieOptions);
+    // REMOVE REFRESH TOKEN TO COOKIE
+    res.clearCookie('refresh_token');
 
-    //
+    // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
