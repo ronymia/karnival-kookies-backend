@@ -3,15 +3,16 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { CategoryServices } from './categories.service';
 import httpStatus from 'http-status';
+import pick from '../../../shared/pick';
+import { paginationFields } from '../../../constants/pagination';
+import { categoryFilterableFields } from './category.constant';
 
 // CREATE
 const createCategory: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { ...categoryData } = req.body;
+    const { ...createData } = req.body;
 
-    const result = await CategoryServices.createCategory(categoryData);
+    const result = await CategoryServices.createCategory(createData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -26,30 +27,31 @@ const createCategory: RequestHandler = catchAsync(
 // GET ALL
 const getAllCategories: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
+    const filters = pick(req.query, categoryFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
 
-    const result = await CategoryServices.getAllCategories();
+    const result = await CategoryServices.getAllCategories(
+      filters,
+      paginationOptions,
+    );
 
-    res.status(200).json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Category Fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Category Fetch successfully',
+      meta: result?.meta,
+      data: result.data,
+    });
   },
 );
 
 // UPDATE
 const updateCategory: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { ...categoryData } = req.body;
+    const { ...updateData } = req.body;
 
-    const result = await CategoryServices.updateCategory(categoryData);
+    const result = await CategoryServices.updateCategory(updateData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {

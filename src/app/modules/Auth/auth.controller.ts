@@ -15,17 +15,16 @@ const RegisterUser: RequestHandler = catchAsync(
       registerData?.password,
     );
 
-    const { refreshToken, ...result } =
-      await AuthServices.registerUser(registerData);
+    const { ...result } = await AuthServices.registerUser(registerData);
 
     // SET REFRESH TOKEN TO COOKIE
-    const cookieOptions: CookieOptions = {
-      secure: config.node_env === 'production',
-      httpOnly: true,
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
-    };
-    res.cookie('refresh_token', refreshToken, cookieOptions);
+    // const cookieOptions: CookieOptions = {
+    //   secure: config.node_env === 'production',
+    //   httpOnly: true,
+    //   sameSite: 'none',
+    //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
+    // };
+    // res.cookie('refresh_token', refreshToken, cookieOptions);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -44,20 +43,22 @@ const loginUser: RequestHandler = catchAsync(
 
     const { refreshToken, ...result } = await AuthServices.loginUser(loginData);
 
-    // SET REFRESH TOKEN TO COOKIE
-    const cookieOptions: CookieOptions = {
-      secure: config.node_env === 'production',
-      httpOnly: true,
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
-    };
-    res.cookie('refresh_token', refreshToken, cookieOptions);
+    if (refreshToken) {
+      // SET REFRESH TOKEN TO COOKIE
+      const cookieOptions: CookieOptions = {
+        secure: config.node_env === 'production',
+        httpOnly: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
+      };
+      res.cookie('refresh_token', refreshToken, cookieOptions);
+    }
 
     // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'user Login successfully',
+      message: `${!result?.user?.is_email_verified ? `Verification Code Sent` : 'Login'} successfully`,
       data: result,
     });
   },
@@ -156,20 +157,29 @@ const sendPasswordCode: RequestHandler = catchAsync(
 // VERIFY USER MAIL
 const verifyUserMail: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const { ...userData } = req.body;
-    const email = req.params?.email;
-    const otp = req.query?.otp;
+    const { ...payloadData } = req.body;
 
-    const result = await AuthServices.verifyUserMail(userData, email, otp);
+    const { success, message, refreshToken, ...result } =
+      await AuthServices.verifyUserMail(payloadData);
 
-    res.json(result);
+    // SENT TOKEN
+    if (refreshToken) {
+      // SET REFRESH TOKEN TO COOKIE
+      const cookieOptions: CookieOptions = {
+        secure: config.node_env === 'production',
+        httpOnly: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
+      };
+      res.cookie('refresh_token', refreshToken, cookieOptions);
+    }
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'User Updated successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: success ? httpStatus.OK : httpStatus.UNPROCESSABLE_ENTITY,
+      success: success as boolean,
+      message: message as string,
+      data: result,
+    });
   },
 );
 
@@ -200,6 +210,24 @@ const getCurrentUser: RequestHandler = catchAsync(
     // });
   },
 );
+// GET USER BY TOKEN
+const getUserByToken: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const verifiedUser = req.user;
+
+    const result = await AuthServices.getUserByToken(Number(verifiedUser?.id));
+
+    // res.json(result);
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'user Register successfully',
+      data: result,
+    });
+  },
+);
 
 export const AuthControllers = {
   RegisterUser,
@@ -210,4 +238,5 @@ export const AuthControllers = {
   sendPasswordCode,
   verifyUserMail,
   getCurrentUser,
+  getUserByToken,
 };

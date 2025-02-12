@@ -9,8 +9,14 @@ const auth =
   (...requiredRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      //get authorization header
+      const authHeader = req.headers.authorization;
+      if (!authHeader && !authHeader?.startsWith('Bearer ')) {
+        throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
+      }
+
       //get authorization token
-      const token = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
       if (!token) {
         throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
       }
@@ -22,7 +28,7 @@ const auth =
         config.jwt.access_token as Secret,
       );
 
-      req.user = verifiedUser; // role  , userId
+      req.user = verifiedUser; // role  , userId, email
 
       // role based guard
       if (requiredRoles.length && !requiredRoles.includes(verifiedUser.role)) {

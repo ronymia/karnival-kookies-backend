@@ -9,6 +9,7 @@ import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { ENUM_USER_ROLE } from '../../../enums/user';
 
 // USER REGISTER FUNCTION
 const registerUser = async (payload: IRegisterUser) => {
@@ -41,48 +42,65 @@ const registerUser = async (payload: IRegisterUser) => {
     [email, password, role, hashedVerificationCode],
   );
 
-  console.log({ created: result, type: typeof result });
+  // EXTRACT USER FROM RESPONSE
+  const user = result[0];
 
-  // IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL
-  // if (
-  //   result?.length > 0 &&
-  //   result[0]?.insertId &&
-  //   role === ENUM_USER_ROLE.CUSTOMER
-  // ) {
-  //   try {
-  //     await EmailHelpers.verifyUserMail(name, email, verificationCode);
-  //     return { message: 'Verification Code sent', email };
-  //   } catch (err) {
-  //     throw new AppError(
-  //       httpStatus.INTERNAL_SERVER_ERROR,
-  //       'Failed to send verification email',
-  //     );
-  //   }
-  // }
+  /* <------------------ IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL ------------------> */
+  if (
+    result?.length > 0 &&
+    result[0]?.insertId &&
+    role === ENUM_USER_ROLE.CUSTOMER
+  ) {
+    try {
+      await EmailHelpers.emailVerification({
+        name: '',
+        email,
+        code: verificationCode,
+      });
+
+      // IF USER UNVERIFIED
+      return {
+        accessToken: null,
+        refreshToken: null,
+        user: {
+          id: user?.insertId,
+          role: role,
+          email: email,
+          is_email_verified: 0,
+        },
+      };
+    } catch (err) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to send verification email',
+      );
+    }
+  }
 
   // if (role !== ENUM_USER_ROLE.CUSTOMER) {
   //   return { id: result?.id, name, email, role, phone };
   // }
-  // ACCESS TOKEN
-  const accessToken = JwtHelpers.createToken(
-    { email, role },
-    config.jwt.access_token as Secret,
-    config.jwt.access_token_expires_in as string,
-  );
 
-  // REFRESH TOKEN
-  const refreshToken = JwtHelpers.createToken(
-    { email, role },
-    config.jwt.refresh_token as Secret,
-    config.jwt.refresh_token_expires_in as string,
-  );
+  // // ACCESS TOKEN
+  // const accessToken = JwtHelpers.createToken(
+  //   { email, role },
+  //   config.jwt.access_token as Secret,
+  //   config.jwt.access_token_expires_in as string,
+  // );
 
-  // RETURN TO CONTROLLER
-  return {
-    accessToken,
-    refreshToken,
-    user: { id: result[0]?.insertId, email, role },
-  };
+  // // REFRESH TOKEN
+  // const refreshToken = JwtHelpers.createToken(
+  //   { email, role },
+  //   config.jwt.refresh_token as Secret,
+  //   config.jwt.refresh_token_expires_in as string,
+  // );
+
+  // // RETURN TO CONTROLLER
+  // return {
+  //   accessToken,
+  //   refreshToken,
+  //   user: { id: result[0]?.insertId, email, role },
+  // };
 };
 
 // USER LOGIN
@@ -94,6 +112,7 @@ const loginUser = async (payload: TLoginUser) => {
     'SELECT * FROM `users` WHERE `email` = ?',
     [email],
   );
+  // EXTRACT USER FROM RESPONSE
   const user = existAccount[0];
   // IF USER NOT FOUND
   if (existAccount.length === 0) {
@@ -110,47 +129,53 @@ const loginUser = async (payload: TLoginUser) => {
     throw new AppError(httpStatus.UNAUTHORIZED, 'Password incorrect');
   }
 
-  // IF USER EMAIL IS UNVERIFIED
-  // if (!!user && !user?.is_email_verified) {
-  //   // EMAIL VERIFICATION CODE
-  //   const verificationCode = await generateCode();
-  //   const hashedCode = await PasswordHelpers.passwordHash(verificationCode);
+  /* <------------------ IF USER UNVERIFIED THEN SEND VERIFICATION CODE ------------------> */
+  try {
+    if (!!user && !user?.is_email_verified) {
+      // EMAIL VERIFICATION CODE
+      const verificationCode = await generateCode();
+      const hashedCode = await PasswordHelpers.passwordHash(verificationCode);
 
-  //   // UPDATE CODE ON DATABASE
-  //   await pool.query('UPDATE users SET code = ? WHERE email = ?', [
-  //     hashedCode,
-  //     user?.email,
-  //   ]);
+      // UPDATE CODE ON DATABASE
+      await pool.query('UPDATE users SET code = ? WHERE email = ?', [
+        hashedCode,
+        user?.email,
+      ]);
 
-  //   //  SEND VERIFICATION CODE INTO MAIL
-  //   await EmailHelpers.verifyUserMail(
-  //     user?.name,
-  //     user?.email,
-  //     verificationCode,
-  //   );
+      //  SEND VERIFICATION CODE INTO MAIL
+      await EmailHelpers.emailVerification({
+        name: user?.name,
+        email: user?.email,
+        code: verificationCode,
+      });
 
-  //   // IF USER UNVERIFIED
-  //   return {
-  //     accessToken: null,
-  //     refreshToken: null,
-  //     user: {
-  //       id: user?.id,
-  //       message: 'Code sent',
-  //       role: user?.role,
-  //       email: user?.email,
-  //       is_email_verified: user?.is_email_verified,
-  //     },
-  //   };
-  // }
+      // IF USER UNVERIFIED
+      return {
+        accessToken: null,
+        refreshToken: null,
+        user: {
+          id: user?.id,
+          role: user?.role,
+          email: user?.email,
+          is_email_verified: user?.is_email_verified,
+        },
+      };
+    }
+  } catch (error) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Failed to send verification email',
+    );
+  }
 
   // create JWT token and refresh token
   const accessToken = JwtHelpers.createToken(
-    { email: user?.email, role: user?.role },
+    { id: user?.id, email: user?.email, role: user?.role },
     config.jwt.access_token as Secret,
     config.jwt.access_token_expires_in as string,
   );
   const refreshToken = JwtHelpers.createToken(
-    { email: user?.email, role: user?.role },
+    { id: user?.id, email: user?.email, role: user?.role },
     config.jwt.refresh_token as Secret,
     config.jwt.refresh_token_expires_in as string,
   );
@@ -281,11 +306,13 @@ const sendPasswordCode = async (email: string) => {
 };
 
 // VERIFY USER MAIL
-const verifyUserMail = async (payload: any, email: string, otp: any) => {
-  //
-  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-    email,
-  ])) as any[];
+const verifyUserMail = async (payload: { email: string; otp: string }) => {
+  // GET USER BY MAIL
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [payload?.email],
+  );
+  // EXTRACT USER
   const user = rows[0];
 
   // USER NOT EXIST
@@ -302,37 +329,54 @@ const verifyUserMail = async (payload: any, email: string, otp: any) => {
   }
 
   // VERIFY CODE
-  if (user?.isVerified) {
-    if (user?.code) {
-      // DECODE CODE
-      const decryptedCode = await PasswordHelpers.passwordMatch(
-        otp,
-        user?.code,
-      );
-      if (!decryptedCode) {
-        return { success: false, message: 'Invalid OTP' };
-      }
-    } else {
-      return { success: true, message: 'User is already verified' };
+  if (!user?.is_email_verified) {
+    // DECODE CODE
+    const decryptedCode = await PasswordHelpers.passwordMatch(
+      payload?.otp,
+      user?.code,
+    );
+    if (!decryptedCode) {
+      return { success: false, message: 'Invalid OTP' };
     }
   }
 
-  // DECODE CODE
-  const decryptedCode = await PasswordHelpers.passwordMatch(otp, user?.code);
-  if (!decryptedCode) {
-    return { success: false, message: 'Invalid OTP' };
-  }
-  //
+  // UPDATE USER ON DATABASE AS VERIFIED
   await pool.query(
-    'UPDATE users SET code = NULL, isVerified = ? WHERE email = ?',
+    'UPDATE users SET code = NULL, is_email_verified = ? WHERE email = ?',
     [true, user?.email],
   );
 
   // SEND MAIL
-  await EmailHelpers.congratulateOnAccountCreation(user?.name, user?.email);
+  await EmailHelpers.congratulateOnAccountCreation({
+    name: user?.name,
+    email: user?.email,
+  });
 
   // SEND TO CONTROLLER
-  return { success: true, message: 'User is verified' };
+  // create JWT token and refresh token
+  const accessToken = JwtHelpers.createToken(
+    { id: user?.id, email: user?.email, role: user?.role },
+    config.jwt.access_token as Secret,
+    config.jwt.access_token_expires_in as string,
+  );
+  const refreshToken = JwtHelpers.createToken(
+    { id: user?.id, email: user?.email, role: user?.role },
+    config.jwt.refresh_token as Secret,
+    config.jwt.refresh_token_expires_in as string,
+  );
+  // IF USER VERIFIED
+  return {
+    success: true,
+    message: 'User verified',
+    accessToken,
+    refreshToken,
+    user: {
+      id: user?.id,
+      role: user?.role,
+      email: user?.email,
+      is_email_verified: user?.is_email_verified,
+    },
+  };
 };
 
 // GET CURRENT USER
@@ -373,6 +417,18 @@ const getCurrentUser = async (token: Secret) => {
     return { user: null };
   }
 };
+const getUserByToken = async (id: number) => {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE id = ?',
+    [id],
+  );
+
+  if (rows?.length === 0) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not Found');
+  }
+
+  return rows[0];
+};
 
 //
 export const AuthServices = {
@@ -383,4 +439,5 @@ export const AuthServices = {
   verifyUserMail,
   getCurrentUser,
   refreshToken,
+  getUserByToken,
 };

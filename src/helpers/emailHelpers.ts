@@ -21,74 +21,101 @@ const transporter = nodemailer.createTransport({
 });
 
 // CONGRATULATIONS ON ACCOUNT SUCCESSFULLY VERIFICATION
-async function congratulateOnAccountCreation(name: string, email: string) {
-  // send mail with defined transport object
+async function congratulateOnAccountCreation({
+  name,
+  email,
+}: {
+  name: string;
+  email: string;
+}) {
   const info = await transporter.sendMail({
-    from: '"Karnival Kookies" <karnivalkookies.com>', // sender address
-    to: email, // list of receivers
-    subject: 'Welcome to our community!', // Subject line
-    text: 'Thank You for registering at karnivalkookies.com!', // plain text body
+    from: '"Karnival Kookies" <no-reply@karnivalkookies.com>', // Updated sender address
+    to: email,
+    subject: 'Welcome to the Karnival Kookies Family! 🍪',
+    text: `Hello ${name || 'Valued Customer'}, thank you for joining us at karnivalkookies.com!`,
     html: `
-        <p>Hello ${name},</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <p style="font-size: 16px;">Hello ${name || 'Valued Customer'},</p>
 
-  <div style="margin: 20px 0;">
-    <p style="margin: 0;">Congratulations and welcome to karnivalkookies.com!</p>
-    <p style="margin: 0;">We're thrilled to have you as part of our community. Your account has been successfully verified, and you're now ready to explore all the amazing goodies we have to offer.</p>
-  </div>
+        <p style="font-size: 14px; margin-bottom: 20px;">
+          🎉 <strong>Congratulations</strong> and welcome to <strong>Karnival Kookies</strong>! We're thrilled to have you as part of our community. Your account has been successfully verified, and you're now ready to explore all the amazing goodies we have to offer.
+        </p>
 
-  <div style="margin: 20px 0;">
-    <p style="margin: 0;">To get started, visit your account and discover our delicious selection of cookies and treats.</p>
-    <p style="margin: 0;">If you have any questions or need assistance, don't hesitate to reach out to us at <a href="mailto:karnivalkookies@gmail.com">karnivalkookies@gmail.com</a>.</p>
-  </div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://karnivalkookies.com/account" 
+             style="background-color: #007bff; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block;">
+            Visit Your Account
+          </a>
+        </div>
 
-  <div style="margin: 20px 0;">
-    <p style="margin: 0;">Once again, welcome aboard! We're excited to serve you the best cookies in town.</p>
-    <p style="margin: 0;">Visit our website at <a href="https://karnivalkookies.com">karnivalkookies.com</a> for more details.</p>
-  </div>
+        <p style="font-size: 14px;">
+          Need help or have questions? Reach out to us at 
+          <a href="mailto:karnivalkookies@gmail.com">karnivalkookies@gmail.com</a>.
+        </p>
 
-  <div>
-    <h4 style="margin: 0;">Best regards,</h4>
-    <p style="margin: 0;">The karnivalkookies Team</p>
-  </div>
-        `, // html body
+        <p style="font-size: 14px; margin-top: 20px;">
+          If you didn’t sign up for this account, please ignore this email or contact our support team.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+        <p style="font-size: 14px; color: #555;">
+          🍪 Dive into our delicious selection of cookies and treats at 
+          <a href="https://karnivalkookies.com">karnivalkookies.com</a>.
+        </p>
+
+        <p style="font-size: 14px; margin-top: 20px;">Best regards,</p>
+        <p style="font-size: 14px; font-weight: bold;">The Karnival Kookies Team</p>
+      </div>
+    `,
   });
-  return info;
-  // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+
+  // Return message info for better logging
+  return { success: true, messageId: info.messageId };
 }
 
-async function verifyUserMail(
-  name: string,
-  email: string,
-  code: string | number,
-) {
-  // send mail with defined transport object
+async function emailVerification({
+  name,
+  email,
+  code,
+}: {
+  name: string;
+  email: string;
+  code: string | number;
+}) {
   const info = await transporter.sendMail({
-    from: '"Karnival Kookies" <karnivalkookies.com>',
+    from: '"Karnival Kookies" <no-reply@karnivalkookies.com>', // Updated email address
     to: email,
-    subject: 'Verify yourself at karnivalkookies.com!',
-    text: 'Is it really you?',
+    subject: 'Verify Your Email at Karnival Kookies!',
+    text: `Hello ${name || 'Valued Customer'}, your verification code is: ${code}`,
     html: `
-        <p>Hello ${name}, </p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <p style="font-size: 16px;">Hello ${name || 'Valued Customer'},</p>
 
-        <div style="margin: 20px 0; ">
-          <p style="margin: 0;">Thank you for registering at karnivalkookies.com. We're excited to have you on board! </p>
-          <p style="margin: 0;">Please enter the code below on the verification page to activate your account.</p>
-        </div>
+        <p style="font-size: 14px; margin-bottom: 20px;">
+          Thank you for registering at <strong>Karnival Kookies</strong>! We're excited to have you on board.
+          Please use the code below to verify your account:
+        </p>
 
-        <h1 style="background-color: #007bff; color: #fff; padding: 10px; border-radius: 5px; text-align: center;">${code}</h1>
+        <h1 style="background-color: #007bff; color: #fff; padding: 15px; border-radius: 5px; text-align: center; font-size: 32px;">${code}</h1>
 
-        <div style="margin: 20px 0; ">
-          <p style="margin: 0;">If you have any questions, feel free to reach out to us at karnivalkookies@gmail.com.</p>
-          <p style="margin: 0;">Visit our website at <a href="https://karnivalkookies.com">karnivalkookies.com</a></a> for more details.</p>
-        </div>
+        <p style="font-size: 14px; margin-top: 20px;">
+          If you didn’t request this verification, please ignore this email.
+        </p>
 
-        <div>
-          <h4 style="margin: 0;">Best regards,</h4>
-          <p style="margin: 0;">karnivalkookies.com</p>
-        </div>
-        `,
+        <p style="font-size: 14px;">
+          For any questions, contact us at <a href="mailto:karnivalkookies@gmail.com">karnivalkookies@gmail.com</a> or visit 
+          <a href="https://karnivalkookies.com">karnivalkookies.com</a>.
+        </p>
+
+        <p style="font-size: 14px;">Best regards,</p>
+        <p style="font-size: 14px; font-weight: bold;">The Karnival Kookies Team</p>
+      </div>
+    `,
   });
-  return info;
+
+  // Return message ID for logging or confirmation
+  return { success: true, messageId: info.messageId };
 }
 
 //   RESET PASSWORD CODE
@@ -182,7 +209,7 @@ async function sendNewsletter(email: string, subject: string, content: string) {
 
 export const EmailHelpers = {
   resetPasswordCode,
-  verifyUserMail,
+  emailVerification,
   congratulateOnAccountCreation,
   orderConfirmationMail,
   sendNewsletter,

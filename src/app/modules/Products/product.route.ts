@@ -52,8 +52,8 @@ router.get('/get/random', ProductControllers.getRandomProduct);
 // UPDATE
 router.put(
   '/',
-  verifyToken,
-  verifyAdmin,
+  // verifyToken,
+  // verifyAdmin,
   // validateRequest(ProductValidations.updateSchema),
   ProductControllers.updateProduct,
 );

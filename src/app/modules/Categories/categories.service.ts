@@ -1,17 +1,21 @@
-import { ResultSetHeader } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../../../shared/mySQL';
-import { type TCreateCategoryType } from './categories.interface';
+import { ICreateCategoryType } from './categories.interface';
+import { paginationHelpers } from '../../../helpers/paginationHelpers';
+import { TPaginationOptions } from '../../../interfaces/pagination';
 
 // CREATE
-const createCategory = async (payload: TCreateCategoryType) => {
+const createCategory = async (
+  payload: ICreateCategoryType,
+): Promise<ICreateCategoryType> => {
   const { name, description } = payload;
 
-  // Correct SQL query with no trailing commas
-  const [result] = (await pool.query<ResultSetHeader>(
+  // INSERT INTO DB
+  const [result] = await pool.query<ResultSetHeader>(
     'INSERT INTO categories (name, description) VALUES (?, ?)',
     [name, description],
-  )) as any[];
-
+  );
+  // SEND TO CONTROLLER
   return {
     id: result?.insertId,
     name,
@@ -20,18 +24,35 @@ const createCategory = async (payload: TCreateCategoryType) => {
 };
 
 // GET ALL
-const getAllCategories = async () => {
-  // Fetch all categories
-  const [categories] = await pool.query('SELECT * FROM categories');
-  // Fetch total category count
-  const [totalCategoriesResult] = (await pool.query(
-    'SELECT COUNT(*) as count FROM categories',
-  )) as any[];
-  const totalCategories = totalCategoriesResult[0].count;
+const getAllCategories = async (
+  filter: any,
+  paginationOptions: TPaginationOptions,
+) => {
+  const { offset, page, limit } =
+    paginationHelpers.calculatePagination(paginationOptions);
 
+  let query = 'SELECT * FROM categories';
+  const countQuery = 'SELECT COUNT(*) as count FROM categories';
+
+  // Check if pagination is required
+  if (limit && page) {
+    query += ` LIMIT ${limit} OFFSET ${offset}`;
+  }
+
+  // Fetch categories
+  const [categories] = await pool.query<RowDataPacket[]>(query);
+
+  // Fetch total category count
+  const [totalCategoriesResult] = await pool.query<RowDataPacket[]>(countQuery);
+
+  // SEND TO CONTROLLER
   return {
+    meta: {
+      total: totalCategoriesResult[0].count || 0,
+      page: page || 1, // Default to page 1 if not provided
+      limit: limit || totalCategoriesResult[0].count, // Default to total count if not provided
+    },
     data: categories,
-    total: totalCategories,
   };
 };
 
@@ -39,23 +60,23 @@ const getAllCategories = async () => {
 const getCategoryById = async () => {};
 
 // UPDATE
-const updateCategory = async (payload: TCreateCategoryType) => {
+const updateCategory = async (
+  payload: ICreateCategoryType,
+): Promise<ICreateCategoryType> => {
   const { id, name, description } = payload;
   // Update the category
-  const [result] = (await pool.query(
+  const [result] = await pool.query<ResultSetHeader>(
     'UPDATE categories SET name = ?, description = ? WHERE id = ?',
     [name, description, id],
-  )) as any[];
+  );
 
-  return result;
+  return { id: result?.insertId, ...payload };
 };
 
 // DELETE
-const deleteCategory = async (id: number) => {
+const deleteCategory = async (id: number): Promise<any> => {
   // Delete category
-  const result = await pool.query('DELETE FROM categories WHERE id = ?', [
-    Number(id),
-  ]);
+  const result = await pool.query('DELETE FROM categories WHERE id = ?', [id]);
   return result;
 };
 

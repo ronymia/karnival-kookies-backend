@@ -7,10 +7,14 @@ import httpStatus from 'http-status';
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    //get authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader && !authHeader?.startsWith('Bearer ')) {
+      throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
+    }
+
     //get authorization token
-    // const token = req.headers.authorization?.split(' ')[1];
-    const token = req?.cookies?.refresh_token;
-    // console.log({ first: token, second: req.cookies.token });
+    const token = authHeader?.split(' ')[1];
     if (!token) {
       throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
     }
@@ -19,15 +23,11 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
 
     verifiedUser = JwtHelpers.verifyToken(
       token,
-      config.jwt.refresh_token as Secret,
+      config.jwt.access_token as Secret,
     );
 
-    req.user = verifiedUser; // role  , userId
+    req.user = verifiedUser; // role  , userId, email
 
-    // // role based guard
-    // if (requiredRoles.length && !requiredRoles.includes(verifiedUser.role)) {
-    //   throw new AppError(httpStatus.FORBIDDEN, 'Forbidden');
-    // }
     next();
   } catch (error) {
     next(error);

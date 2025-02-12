@@ -4,6 +4,7 @@ import { AuthValidations } from './auth.validation';
 import validateRequest from '../../middlewares/validateRequest';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import config from '../../../config';
+import verifyToken from '../../middlewares/verifyToken';
 
 const router = express.Router();
 
@@ -71,9 +72,10 @@ router.post('/logOut', AuthControllers.logOut);
 router.post('/is-user-exist', AuthControllers.sendPasswordCode);
 
 // VERIFY USER MAIL
-router.put('/user/verify/:email', AuthControllers.verifyUserMail);
+router.put('/verify-user-email', AuthControllers.verifyUserMail);
 
 // CURRENT USER
 router.get('/user/info', AuthControllers.getCurrentUser);
+router.get('/user-by-token', verifyToken, AuthControllers.getUserByToken);
 
 export const AuthRoutes = router;

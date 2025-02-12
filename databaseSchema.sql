@@ -12,7 +12,6 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-
 -- PROFILE
 
 CREATE TABLE profiles (
@@ -34,7 +33,7 @@ CREATE TABLE profiles (
 CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    description LONGTEXT NOT NULL,
+    description LONGTEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )
@@ -45,20 +44,18 @@ CREATE TABLE products (
     description LONGTEXT DEFAULT NULL,
     category_id INT NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
-    discount_price DECIMAL(10, 2) DEFAULT NULL,
+    discount_type ENUM('fixed', 'percent') DEFAULT NULL, -- New column to specify type of discount
+    discount_value DECIMAL(10,2) DEFAULT NULL, -- New column to store discount amount or percentage
     images JSON NOT NULL,
     quantity INT NOT NULL,
     unit ENUM('kg', 'litre', 'pcs', 'bag') NOT NULL,
     is_discount_enable BOOLEAN DEFAULT 0 NOT NULL,
-    status enum(
-        "in-stock",
-        "out-of-stock",
-        "discontinued"
-    ) NOT NULL DEFAULT "in-stock",
+    status ENUM('in-stock', 'out-of-stock', 'discontinued') NOT NULL DEFAULT 'in-stock',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
 );
+
 
 -- STOCK
 CREATE TABLE stocks (

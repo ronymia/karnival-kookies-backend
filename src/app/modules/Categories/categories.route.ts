@@ -4,6 +4,7 @@ import verifyToken from '../../middlewares/verifyToken';
 import verifyAdmin from '../../middlewares/verifyAdmin';
 import validateRequest from '../../middlewares/validateRequest';
 import { CategoryValidations } from './categories.validation';
+import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
@@ -28,8 +29,7 @@ const router = express.Router();
 //  CREATE
 router.post(
   '/',
-  verifyToken,
-  verifyAdmin,
+  auth('admin', 'superAdmin'),
   validateRequest(CategoryValidations.createSchema),
   CategoryControllers.createCategory,
 );
@@ -40,8 +40,7 @@ router.get('/', CategoryControllers.getAllCategories);
 //  UPDATE
 router.put(
   '/',
-  verifyToken,
-  verifyAdmin,
+  auth('admin', 'superAdmin'),
   validateRequest(CategoryValidations.updateSchema),
   CategoryControllers.updateCategory,
 );
@@ -49,8 +48,7 @@ router.put(
 // DELETE
 router.delete(
   '/:id',
-  verifyToken,
-  verifyAdmin,
+  auth('admin', 'superAdmin'),
   CategoryControllers.deleteCategory,
 );
 

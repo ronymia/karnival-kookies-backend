@@ -10,7 +10,7 @@ type TPaginationResult = {
   page: number;
   perPage?: number;
   limit?: number;
-  skip: number;
+  skip?: number;
   offset: number;
   sortBy: string;
   sortOrder: string;

@@ -1,9 +1,7 @@
-export type TCreateCategoryType = {
+export interface ICreateCategoryType {
   id?: number;
   name: string;
   description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-export type TUpdateCategoryType = Partial<TCreateCategoryType>;
+  created_at?: string;
+  updated_at?: string;
+}
