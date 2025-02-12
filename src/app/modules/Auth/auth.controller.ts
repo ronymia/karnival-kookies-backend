@@ -72,11 +72,11 @@ const refreshToken: RequestHandler = catchAsync(
     const result = await AuthServices.refreshToken(refresh_token);
 
     // SET REFRESH TOKEN TO COOKIE
-    const cookieOptions = {
+    const cookieOptions: CookieOptions = {
       secure: config.node_env === 'product',
       httpOnly: true,
     };
-    res.cookie('refresh_token', cookieOptions);
+    res.cookie('refresh_token', result, cookieOptions);
 
     //
     sendResponse<any>(res, {
