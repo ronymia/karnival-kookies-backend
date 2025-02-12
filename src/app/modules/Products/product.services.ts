@@ -4,30 +4,38 @@ import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
 import { TProduct } from './product.interface';
+import { RowDataPacket } from 'mysql2';
 
 // CREATE PRODUCT
 const createProduct = async (payload: TProduct): Promise<any> => {
   const {
     name,
     description,
-    regular_price,
-    discount_price,
-    images,
     category_id,
+    price,
+    discount_type,
+    discount_value,
+    images,
     quantity,
+    unit,
     is_discount_enable,
     status,
   } = payload;
+
   const [result] = (await pool.query(
-    'INSERT INTO products (name, description, regular_price, discount_price, images, category_id, quantity, is_discount_enable, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    `INSERT INTO products 
+      (name, description, category_id, price, discount_type, discount_value, images, quantity, unit, is_discount_enable, status) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       description,
-      regular_price,
-      discount_price,
-      JSON.stringify(images),
       category_id,
+      price,
+      discount_type,
+      discount_value,
+      JSON.stringify(images),
       quantity,
+      unit,
       is_discount_enable,
       status,
     ],
@@ -37,11 +45,13 @@ const createProduct = async (payload: TProduct): Promise<any> => {
     id: result.insertId,
     name,
     description,
-    regular_price,
-    discount_price,
-    images,
     category_id,
+    price,
+    discount_type,
+    discount_value,
+    images,
     quantity,
+    unit,
     is_discount_enable,
     status,
   };
@@ -71,98 +81,117 @@ const getAllClientProducts = async (
     sortOrder = 'ASC',
   } = paginationOptions;
 
-  const offset = (Number(page) - 1) * Number(limit);
+  // const offset = (Number(page) - 1) * Number(limit);
 
-  // Base query for products
-  let query = `
-    SELECT 
-      p.*, 
-      COALESCE(p.discount_price, p.regular_price) AS effective_price,
-      JSON_OBJECT(
-        'id', c.id,
-        'name', c.name,
-        'description', c.description,
-        'created_at', c.created_at,
-        'updated_at', c.updated_at
-      ) AS category,
-      JSON_ARRAYAGG(fp.user_id) AS favorite_users
+  // // Base query for products
+  // let query = `
+  //   SELECT
+  //     p.*,
+  //     COALESCE(p.discount_price, p.regular_price) AS effective_price,
+  //     JSON_OBJECT(
+  //       'id', c.id,
+  //       'name', c.name,
+  //       'description', c.description,
+  //       'created_at', c.created_at,
+  //       'updated_at', c.updated_at
+  //     ) AS category,
+  //     JSON_ARRAYAGG(fp.user_id) AS favorite_users
+  //   FROM products p
+  //   LEFT JOIN categories c ON c.id = p.category_id
+  //   LEFT JOIN favorite_products fp ON p.id = fp.product_id
+  // `;
+
+  // // Base query for total count
+  // let countQuery = `
+  //   SELECT
+  //     COUNT(DISTINCT p.id) AS total_count
+  //   FROM products p
+  //   LEFT JOIN categories c ON c.id = p.category_id
+  //   LEFT JOIN favorite_products fp ON p.id = fp.product_id
+  // `;
+
+  // // WHERE conditions
+  // const whereConditions: string[] = [];
+  // const values: any[] = [];
+
+  // if (category_id) {
+  //   whereConditions.push('p.category_id = ?');
+  //   values.push(category_id);
+  // }
+
+  // if (fromPrice) {
+  //   whereConditions.push('COALESCE(p.discount_price, p.regular_price) >= ?');
+  //   values.push(fromPrice);
+  // }
+
+  // if (toPrice) {
+  //   whereConditions.push('COALESCE(p.discount_price, p.regular_price) <= ?');
+  //   values.push(toPrice);
+  // }
+
+  // if (searchTerm) {
+  //   whereConditions.push(
+  //     `(p.name LIKE ? OR p.description LIKE ? OR c.name LIKE ?)`,
+  //   );
+  //   const term = `%${searchTerm}%`;
+  //   values.push(term, term, term);
+  // }
+
+  // // Add WHERE clause to both queries if conditions exist
+  // if (whereConditions.length > 0) {
+  //   const whereClause = ` WHERE ${whereConditions.join(' AND ')}`;
+  //   query += whereClause;
+  //   countQuery += whereClause;
+  // }
+
+  // // GROUP BY for product query
+  // query += ` GROUP BY p.id`;
+
+  // // Sorting
+  // if (sortByNewest) {
+  //   query += ` ORDER BY p.created_at DESC`;
+  // } else if (HighToLow) {
+  //   query += ` ORDER BY effective_price DESC`;
+  // } else if (lowToHigh) {
+  //   query += ` ORDER BY effective_price ASC`;
+  // } else {
+  //   query += ` ORDER BY ${sortBy} ${sortOrder}`;
+  // }
+
+  // // Pagination
+  // query += ` LIMIT ? OFFSET ?`;
+  // values.push(Number(limit), Number(offset));
+
+  // // Execute the queries
+  // const [products] = (await pool.query(query, values)) as any[];
+  // const [totalCountResult] = (await pool.query(
+  //   countQuery,
+  //   values.slice(0, -2),
+  // )) as any[];
+  const query = `
+    SELECT p.*,
+           JSON_OBJECT(
+             'id', c.id,
+             'name', c.name,
+             'description', c.description
+           ) AS category,
+           CASE
+             WHEN p.discount_type = 'fixed' THEN p.price - p.discount_value
+             WHEN p.discount_type = 'percent' THEN p.price - (p.price * p.discount_value / 100)
+             ELSE p.price
+           END AS net_price
     FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
-    LEFT JOIN favorite_products fp ON p.id = fp.product_id
+    JOIN categories c ON p.category_id = c.id;
   `;
 
-  // Base query for total count
-  let countQuery = `
-    SELECT 
-      COUNT(DISTINCT p.id) AS total_count
-    FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
-    LEFT JOIN favorite_products fp ON p.id = fp.product_id
-  `;
-
-  // WHERE conditions
-  const whereConditions: string[] = [];
-  const values: any[] = [];
-
-  if (category_id) {
-    whereConditions.push('p.category_id = ?');
-    values.push(category_id);
-  }
-
-  if (fromPrice) {
-    whereConditions.push('COALESCE(p.discount_price, p.regular_price) >= ?');
-    values.push(fromPrice);
-  }
-
-  if (toPrice) {
-    whereConditions.push('COALESCE(p.discount_price, p.regular_price) <= ?');
-    values.push(toPrice);
-  }
-
-  if (searchTerm) {
-    whereConditions.push(
-      `(p.name LIKE ? OR p.description LIKE ? OR c.name LIKE ?)`,
-    );
-    const term = `%${searchTerm}%`;
-    values.push(term, term, term);
-  }
-
-  // Add WHERE clause to both queries if conditions exist
-  if (whereConditions.length > 0) {
-    const whereClause = ` WHERE ${whereConditions.join(' AND ')}`;
-    query += whereClause;
-    countQuery += whereClause;
-  }
-
-  // GROUP BY for product query
-  query += ` GROUP BY p.id`;
-
-  // Sorting
-  if (sortByNewest) {
-    query += ` ORDER BY p.created_at DESC`;
-  } else if (HighToLow) {
-    query += ` ORDER BY effective_price DESC`;
-  } else if (lowToHigh) {
-    query += ` ORDER BY effective_price ASC`;
-  } else {
-    query += ` ORDER BY ${sortBy} ${sortOrder}`;
-  }
-
-  // Pagination
-  query += ` LIMIT ? OFFSET ?`;
-  values.push(Number(limit), Number(offset));
-
-  // Execute the queries
-  const [products] = (await pool.query(query, values)) as any[];
-  const [totalCountResult] = (await pool.query(
-    countQuery,
-    values.slice(0, -2),
-  )) as any[];
-  const totalCount = totalCountResult[0]?.total_count || 0;
+  const [products] = await pool.query<RowDataPacket[]>(query);
+  const [totalProductsResult] = await pool.query<RowDataPacket[]>(
+    'SELECT COUNT(*) AS count FROM products',
+  );
 
   return {
     meta: {
-      total: totalCount,
+      total: totalProductsResult[0].count || 0,
       page,
       limit,
     },
@@ -179,70 +208,91 @@ const getAllProducts = async (
     paginationHelpers.calculatePagination(paginationOptions);
 
   // Base query to fetch products with category information
-  let query = `
-    SELECT 
-      p.*, 
-      COALESCE(p.discount_price, p.regular_price) AS effective_price, 
-      JSON_OBJECT(
-        'id', c.id,
-        'name', c.name,
-        'description', c.description,
-        'created_at', c.created_at,
-        'updated_at', c.updated_at
-      ) AS category
+  // let query = `
+  //   SELECT
+  //     p.*,
+  //     COALESCE(p.discount_price, p.regular_price) AS effective_price,
+  //     JSON_OBJECT(
+  //       'id', c.id,
+  //       'name', c.name,
+  //       'description', c.description,
+  //       'created_at', c.created_at,
+  //       'updated_at', c.updated_at
+  //     ) AS category
+  //   FROM products p
+  //   LEFT JOIN categories c ON c.id = p.category_id
+  // `;
+
+  // // Construct WHERE conditions for filters
+  // const filterConditions: string[] = [];
+  // const filterValues: any[] = [];
+
+  // // Dynamically build the filter conditions
+  // Object.entries(filters).forEach(([key, value]) => {
+  //   if (value !== undefined && value !== null && value !== '') {
+  //     filterConditions.push(`p.${key} = ?`);
+  //     filterValues.push(value);
+  //   }
+  // });
+
+  // // If there are filters, add them to the query
+  // if (filterConditions.length > 0) {
+  //   query += ` WHERE ${filterConditions.join(' AND ')}`;
+  // }
+
+  // // Add sorting and pagination to the query
+  // if (limit && page) {
+  //   query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
+  //   // Add pagination values to filterValues
+  //   filterValues.push(limit, offset);
+  // }
+
+  // // Execute the query to fetch products
+  // const [products] = await pool.query(query, filterValues);
+
+  // // Query to get the total count of filtered products
+  // let countQuery = `
+  //   SELECT COUNT(*) AS count
+  //   FROM products p
+  //   LEFT JOIN categories c ON c.id = p.category_id
+  // `;
+
+  // // Add the WHERE condition for counting if filters exist
+  // if (filterConditions.length > 0) {
+  //   countQuery += ` WHERE ${filterConditions.join(' AND ')}`;
+  // }
+
+  // // Execute the count query
+  // const [totalProductsResult] = (await pool.query(
+  //   countQuery,
+  //   filterValues.slice(0, -2),
+  // )) as any; // Exclude LIMIT and OFFSET
+  // const totalProducts = totalProductsResult[0]?.count || 0;
+  // Query to get all products with their category details
+  const query = `
+    SELECT p.*,
+           JSON_OBJECT(
+             'id', c.id,
+             'name', c.name,
+             'description', c.description
+           ) AS category,
+           CASE
+             WHEN p.discount_type = 'fixed' THEN p.price - p.discount_value
+             WHEN p.discount_type = 'percent' THEN p.price - (p.price * p.discount_value / 100)
+             ELSE p.price
+           END AS net_price
     FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
+    JOIN categories c ON p.category_id = c.id;
   `;
 
-  // Construct WHERE conditions for filters
-  const filterConditions: string[] = [];
-  const filterValues: any[] = [];
-
-  // Dynamically build the filter conditions
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      filterConditions.push(`p.${key} = ?`);
-      filterValues.push(value);
-    }
-  });
-
-  // If there are filters, add them to the query
-  if (filterConditions.length > 0) {
-    query += ` WHERE ${filterConditions.join(' AND ')}`;
-  }
-
-  // Add sorting and pagination to the query
-  if (limit && page) {
-    query += ` ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
-    // Add pagination values to filterValues
-    filterValues.push(limit, offset);
-  }
-
-  // Execute the query to fetch products
-  const [products] = await pool.query(query, filterValues);
-
-  // Query to get the total count of filtered products
-  let countQuery = `
-    SELECT COUNT(*) AS count 
-    FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
-  `;
-
-  // Add the WHERE condition for counting if filters exist
-  if (filterConditions.length > 0) {
-    countQuery += ` WHERE ${filterConditions.join(' AND ')}`;
-  }
-
-  // Execute the count query
-  const [totalProductsResult] = (await pool.query(
-    countQuery,
-    filterValues.slice(0, -2),
-  )) as any; // Exclude LIMIT and OFFSET
-  const totalProducts = totalProductsResult[0]?.count || 0;
+  const [products] = await pool.query(query);
+  const [totalProductsResult] = await pool.query<RowDataPacket[]>(
+    'SELECT COUNT(*) AS count FROM products',
+  );
 
   return {
     meta: {
-      total: totalProducts,
+      total: totalProductsResult[0]?.count || 0,
       page,
       limit,
     },
@@ -336,25 +386,41 @@ const updateProduct = async (payload: any) => {
     id,
     name,
     description,
-    regular_price,
-    discount_price,
+    price,
+    discount_value,
+    discount_type, // Added discount type (fixed or percent)
     images,
     category_id,
     quantity,
+    unit, // Added unit
     is_discount_enable,
     status,
   } = payload;
 
   const [result] = await pool.query(
-    'UPDATE products SET name = ?, description = ?, regular_price = ?, discount_price = ?, images = ?, category_id = ?, quantity = ?, is_discount_enable = ?, status = ? WHERE id = ?',
+    `UPDATE products 
+     SET name = ?, 
+         description = ?, 
+         price = ?, 
+         discount_value = ?, 
+         discount_type = ?, 
+         images = ?, 
+         category_id = ?, 
+         quantity = ?, 
+         unit = ?, 
+         is_discount_enable = ?, 
+         status = ?
+     WHERE id = ?`,
     [
       name,
       description,
-      regular_price,
-      discount_price,
+      price,
+      discount_value,
+      discount_type,
       JSON.stringify(images),
       category_id,
       quantity,
+      unit,
       is_discount_enable,
       status,
       id,

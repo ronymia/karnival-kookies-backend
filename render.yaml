@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: my-nodejs-app
+    runtime: node
+    buildCommand: |
+      yarn install
+      yarn build
+    startCommand: node dist/src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    plan: free
