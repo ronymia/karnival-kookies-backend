@@ -5,7 +5,7 @@ services:
     buildCommand: |
       yarn install
       yarn build
-    startCommand: node dist/src/server.js
+    startCommand: node --loader ts-node/esm dist/src/server.js
     envVars:
       - key: NODE_ENV
         value: production
