@@ -1,7 +1,5 @@
 import express from 'express';
 import { CategoryControllers } from './categories.controller';
-import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
 import validateRequest from '../../middlewares/validateRequest';
 import { CategoryValidations } from './categories.validation';
 import auth from '../../middlewares/auth';
@@ -47,7 +45,7 @@ router.put(
 
 // DELETE
 router.delete(
-  '/:id',
+  '/:ids',
   auth('admin', 'superAdmin'),
   CategoryControllers.deleteCategory,
 );

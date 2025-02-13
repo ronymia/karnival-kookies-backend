@@ -6,6 +6,7 @@ import httpStatus from 'http-status';
 import pick from '../../../shared/pick';
 import { paginationFields } from '../../../constants/pagination';
 import { categoryFilterableFields } from './category.constant';
+import AppError from '../../../errors/AppError';
 
 // CREATE
 const createCategory: RequestHandler = catchAsync(
@@ -65,11 +66,20 @@ const updateCategory: RequestHandler = catchAsync(
 // DELETE
 const deleteCategory: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { id } = req.params;
+    const { ids } = req.params;
+    // FILTER ID AND  CONVERT TO NUMBER
+    const parsedIds = ids
+      .split(',')
+      .map((id) => Number(id.trim()))
+      .filter((id) => !isNaN(id)); // ENSURE ALL IDS ARE VALID NUMBER
 
-    const result = await CategoryServices.deleteCategory(Number(id));
+    if (parsedIds.length === 0) {
+      throw new AppError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        `No valid IDs provided. ${ids}`,
+      );
+    }
+    const result = await CategoryServices.deleteCategory(parsedIds);
 
     // SEND RESPONSE
     sendResponse<any>(res, {

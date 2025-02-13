@@ -4,7 +4,7 @@ import { ICreateCategoryType } from './categories.interface';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 
-// CREATE
+// CREATE A NEW CATEGORY
 const createCategory = async (
   payload: ICreateCategoryType,
 ): Promise<ICreateCategoryType> => {
@@ -23,26 +23,28 @@ const createCategory = async (
   };
 };
 
-// GET ALL
+// GET ALL CATEGORIES
 const getAllCategories = async (
   filter: any,
   paginationOptions: TPaginationOptions,
-) => {
+): Promise<any> => {
+  // Destructure pagination options
   const { offset, page, limit } =
     paginationHelpers.calculatePagination(paginationOptions);
 
+  // BUILD THE QUERY
   let query = 'SELECT * FROM categories';
   const countQuery = 'SELECT COUNT(*) as count FROM categories';
 
-  // Check if pagination is required
+  // CHECK THE PAGINATION REQUIREMENTS
   if (limit && page) {
     query += ` LIMIT ${limit} OFFSET ${offset}`;
   }
 
-  // Fetch categories
+  // FETCH CATEGORIES
   const [categories] = await pool.query<RowDataPacket[]>(query);
 
-  // Fetch total category count
+  // FETCH TOTAL CATEGORY COUNT
   const [totalCategoriesResult] = await pool.query<RowDataPacket[]>(countQuery);
 
   // SEND TO CONTROLLER
@@ -51,6 +53,7 @@ const getAllCategories = async (
       total: totalCategoriesResult[0].count || 0,
       page: page || 1, // Default to page 1 if not provided
       limit: limit || totalCategoriesResult[0].count, // Default to total count if not provided
+      total_page: Math.ceil(totalCategoriesResult[0].count / limit!),
     },
     data: categories,
   };
@@ -74,9 +77,15 @@ const updateCategory = async (
 };
 
 // DELETE
-const deleteCategory = async (id: number): Promise<any> => {
-  // Delete category
-  const result = await pool.query('DELETE FROM categories WHERE id = ?', [id]);
+const deleteCategory = async (ids: number[]): Promise<any> => {
+  // GENERATE PLACEHOLDER FOR QUERY
+  const placeholders = ids.map(() => '?');
+
+  // DELETE QUERY
+  const query = `DELETE FROM categories WHERE id IN (${placeholders})`;
+  // EXECUTE QUERY
+  const [result] = await pool.query(query, ids);
+
   return result;
 };
 
