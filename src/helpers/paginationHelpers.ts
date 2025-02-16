@@ -18,9 +18,7 @@ type TPaginationResult = {
 
 const calculatePagination = (options: TOptions): TPaginationResult => {
   const page = Number(options?.page);
-  const perPage = Number(options?.perPage);
   const limit = Number(options?.limit);
-  const skip = (page - 1) * perPage;
   const offset = (page - 1) * limit;
 
   const sortBy = options?.sortBy || 'created_at';
@@ -28,9 +26,7 @@ const calculatePagination = (options: TOptions): TPaginationResult => {
 
   return {
     page,
-    perPage,
     limit,
-    skip,
     offset,
     sortBy,
     sortOrder,

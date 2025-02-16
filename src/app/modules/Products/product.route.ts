@@ -36,7 +36,9 @@ router.post(
 );
 
 // GET ALL
-router.get('/', ProductControllers.getAllClientProducts);
+router.get('/', ProductControllers.getAllProducts);
+// GET ALL
+router.get('/get-price-bounds', ProductControllers.getPriceBounds);
 
 // GET ALL
 router.get('/all-products', ProductControllers.getAllProducts);

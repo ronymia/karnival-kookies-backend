@@ -11,8 +11,6 @@ import AppError from '../../../errors/AppError';
 // CREATE PACKAGE
 const createPackage: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
     const { ...payloadData } = req.body;
 
     const result = await PackageServices.createPackage(payloadData);
@@ -43,7 +41,8 @@ const getAllPackages: RequestHandler = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: 'Packages fetch successfully',
-      data: result,
+      meta: result.meta,
+      data: result.data,
     });
   },
 );

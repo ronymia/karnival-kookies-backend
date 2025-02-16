@@ -1,8 +1,9 @@
 import express from 'express';
-import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
 import { PackageControllers } from './package.controller';
 import dynamicFileUpload from '../../middlewares/uploadFiles';
+import validateRequest from '../../middlewares/validateRequest';
+import { PackageValidations } from './package.validation';
+import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
@@ -25,7 +26,12 @@ const router = express.Router();
  *********************/
 
 //  CREATE PACKAGE
-router.post('/', verifyToken, verifyAdmin, PackageControllers.createPackage);
+router.post(
+  '/',
+  auth('admin', 'superAdmin'),
+  // validateRequest(PackageValidations.createSchema),
+  PackageControllers.createPackage,
+);
 
 //  GET ALL PACKAGES
 router.get('/', PackageControllers.getAllPackages);
@@ -34,21 +40,24 @@ router.get('/', PackageControllers.getAllPackages);
 router.get('/:id', PackageControllers.getPackageById);
 
 // UPDATE PACKAGE
-router.patch('/', verifyToken, verifyAdmin, PackageControllers.updatePackage);
+router.patch(
+  '/',
+  auth('admin', 'superAdmin'),
+  // validateRequest(PackageValidations.updateSchema),
+  PackageControllers.updatePackage,
+);
 
 // DELETE PACKAGE
 router.delete(
   '/:ids',
-  verifyToken,
-  verifyAdmin,
+  auth('admin', 'superAdmin'),
   PackageControllers.deletePackage,
 );
 
 // UPLOAD PACKAGE FILES
 router.post(
   '/upload-bulk-images',
-  // verifyToken,
-  // verifyAdmin,
+  auth('admin', 'superAdmin'),
   dynamicFileUpload('files', 'Images/packages'),
   PackageControllers.uploadPackageFiles,
 );

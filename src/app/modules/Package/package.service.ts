@@ -1,31 +1,38 @@
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
 import { IPackage } from './package.interface';
+import { paginationHelpers } from '../../../helpers/paginationHelpers';
 
 // CREATE PACKAGE
 const createPackage = async (payload: IPackage): Promise<any> => {
   const {
     name,
     description,
-    regularPrice,
-    discountPrice,
-    is_active,
-    inStock,
+    price,
+    discount_type,
+    discount_value,
     images,
+    quantity,
+    unit,
+    is_discount_enable,
   } = payload;
 
-  const [result] = (await pool.query(
-    'INSERT INTO packages (name,description,regularPrice,discountPrice,is_active,inStock,images) VALUES (?,?,?,?,?,?,?)',
+  const [result] = await pool.query<ResultSetHeader>(
+    `INSERT INTO packages (name, description, price, discount_type, discount_value, images, quantity, unit, is_discount_enable) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       description,
-      regularPrice,
-      discountPrice,
-      is_active,
-      inStock,
+      price,
+      discount_type,
+      discount_value,
       JSON.stringify(images),
+      quantity,
+      unit,
+      is_discount_enable,
     ],
-  )) as any[];
+  );
 
   return { id: result?.insertId, ...payload };
 };
@@ -34,17 +41,49 @@ const getAllPackages = async (
   filters: any,
   paginationOptions: TPaginationOptions,
 ): Promise<any> => {
-  const [result] = (await pool.query('SELECT * FROM packages')) as any[];
+  const { page, limit, offset } =
+    paginationHelpers.calculatePagination(paginationOptions);
 
-  // IMAGE JSON TO OBJECT
-  const parsedImages = result?.map((product: any) => {
-    return {
-      ...product,
-      images: JSON.parse(product?.images),
-    };
-  });
+  // Fetch only required fields with net_price calculation
+  let query = `
+      SELECT 
+        p.*,
+        CASE 
+          WHEN p.is_discount_enable = 1 THEN 
+            CASE 
+              WHEN p.discount_type = 'fixed' THEN p.price - p.discount_value
+              WHEN p.discount_type = 'percent' THEN p.price - (price * p.discount_value / 100)
+              ELSE p.price
+            END
+          ELSE p.price
+        END AS net_price
+      FROM packages p
+    `;
 
-  return parsedImages;
+  const queryParams: any[] = [];
+
+  // Apply pagination only if page & limit exist
+  if (page && limit && offset) {
+    query += ' LIMIT ? OFFSET ?';
+    queryParams.push(limit, offset);
+  }
+
+  const [result] = await pool.query<RowDataPacket[]>(query, queryParams);
+
+  // GET TOTAL PACKAGE COUNT
+  const [totalPackagesResult] = await pool.query<RowDataPacket[]>(
+    'SELECT COUNT(*) as count FROM packages',
+  );
+
+  return {
+    meta: {
+      total: totalPackagesResult[0].count,
+      page: page || 1,
+      limit: limit || totalPackagesResult[0].count,
+      total_page: Math.ceil(totalPackagesResult[0].count / limit! || 0),
+    },
+    data: result,
+  };
 };
 // GET PACKAGE BY ID
 const getPackageById = async (id: number): Promise<any> => {
@@ -60,30 +99,46 @@ const updatePackage = async (payload: Partial<IPackage>): Promise<any> => {
     id,
     name,
     description,
-    regularPrice,
-    discountPrice,
-    is_active,
-    inStock,
+    price,
+    discount_value,
+    discount_type, // Added discount type (fixed or percent)
     images,
+    quantity,
+    unit, // Added unit
+    is_discount_enable,
+    status,
   } = payload;
+  console.log({ payload });
 
-  (await pool.query(
+  const [result] = await pool.query<ResultSetHeader>(
     `UPDATE packages 
-   SET name = ?, description = ?, regularPrice = ?, discountPrice = ?, is_active = ?, inStock = ?, images = ?
-   WHERE id = ?`,
+     SET name = ?, 
+         description = ?, 
+         price = ?, 
+         discount_value = ?, 
+         discount_type = ?, 
+         images = ?, 
+         quantity = ?, 
+         unit = ?, 
+         is_discount_enable = ?, 
+         status = ?
+     WHERE id = ?`,
     [
       name,
       description,
-      regularPrice,
-      discountPrice,
-      is_active,
-      inStock,
+      price,
+      discount_value,
+      discount_type,
       JSON.stringify(images),
+      quantity,
+      unit,
+      is_discount_enable,
+      status,
       id,
     ],
-  )) as any[];
+  );
 
-  return payload;
+  return result;
 };
 // DELETE PACKAGE
 const deletePackage = async (ids: number[]): Promise<any> => {

@@ -66,6 +66,21 @@ const getAllProducts: RequestHandler = catchAsync(
     });
   },
 );
+// GET ALL
+const getPriceBounds: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await ProductServices.getPriceBounds();
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Product price bounds fetch successfully',
+      meta: result?.meta,
+      data: result?.data,
+    });
+  },
+);
 // GET BY ID
 const getProductById: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -164,10 +179,11 @@ const deleteProduct: RequestHandler = catchAsync(
 
 export const ProductControllers = {
   createProduct,
+  getAllProducts,
+  getPriceBounds,
   getAllClientProducts,
   updateProduct,
   deleteProduct,
-  getAllProducts,
   getProductById,
   getRandomProduct,
   uploadProductImage,
