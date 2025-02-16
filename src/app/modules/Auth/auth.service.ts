@@ -417,6 +417,8 @@ const getCurrentUser = async (token: Secret) => {
     return { user: null };
   }
 };
+
+// GET USER BY TOKEN
 const getUserByToken = async (id: number) => {
   const [rows] = await pool.query<RowDataPacket[]>(
     'SELECT * FROM users WHERE id = ?',

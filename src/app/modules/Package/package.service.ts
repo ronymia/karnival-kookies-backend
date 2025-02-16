@@ -108,8 +108,8 @@ const updatePackage = async (payload: Partial<IPackage>): Promise<any> => {
     is_discount_enable,
     status,
   } = payload;
-  console.log({ payload });
 
+  // EXECUTE QUERY
   const [result] = await pool.query<ResultSetHeader>(
     `UPDATE packages 
      SET name = ?, 

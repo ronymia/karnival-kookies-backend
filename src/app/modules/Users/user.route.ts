@@ -1,7 +1,6 @@
 import express from 'express';
 import { UserControllers } from './user.controller';
-import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
+import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
@@ -22,11 +21,13 @@ const router = express.Router();
  *@apiError {forbidden 403} => only only can access this
  *
  *********************/
+// UPDATE USER
+router.post('/', auth('superAdmin', 'admin'), UserControllers.createUser);
 
 //  GET ALL USER
-router.get('/all', verifyToken, verifyAdmin, UserControllers.getAllUsers);
+router.get('/', auth('superAdmin', 'admin'), UserControllers.getAllUsers);
 
 // UPDATE USER
-router.put('/:email', verifyToken, UserControllers.updateUser);
+router.patch('/:id', auth('superAdmin', 'admin'), UserControllers.updateUser);
 
 export const UserRoutes = router;
