@@ -25,6 +25,14 @@ export interface IRegisterUser {
   password: string;
   role: string;
   is_email_verified: boolean;
+  name: string;
+  phone: string;
+  address: string;
+  country: string;
+  city: string;
+  postcode: string;
+  date_of_birth: string;
+  gender: string;
 }
 
 export type TRefreshTokenResponse = {

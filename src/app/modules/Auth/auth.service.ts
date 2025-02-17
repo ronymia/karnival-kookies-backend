@@ -10,11 +10,24 @@ import { EmailHelpers } from '../../../helpers/emailHelpers';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { ENUM_USER_ROLE } from '../../../enums/user';
+import moment from 'moment';
 
 // USER REGISTER FUNCTION
 const registerUser = async (payload: IRegisterUser) => {
   // PAYLOAD EXTRACT
-  const { email, password, role } = payload;
+  const {
+    name,
+    email,
+    password,
+    role,
+    phone,
+    address,
+    country,
+    city,
+    postcode,
+    date_of_birth,
+    gender,
+  } = payload;
 
   // CHECKING USER EXISTENT
   const [existAccount] = await pool.query<RowDataPacket[]>(
@@ -36,45 +49,83 @@ const registerUser = async (payload: IRegisterUser) => {
     verificationCode.toString(),
   );
 
-  // CREATE NEW USER
-  const [result] = await pool.query<ResultSetHeader[]>(
-    'INSERT INTO users (email, password, role, code) VALUES (?, ?, ?, ?)',
-    [email, password, role, hashedVerificationCode],
-  );
+  // START TRANSACTION
+  const connection = await pool.getConnection();
+  try {
+    // START TRANSACTION
+    await connection.beginTransaction();
 
-  // EXTRACT USER FROM RESPONSE
-  const user = result[0];
+    // CREATE USER ON DATABASE
+    const [createdUser] = await pool.query<ResultSetHeader>(
+      'INSERT INTO users (email, password, role, code) VALUES (?, ?, ?, ?)',
+      [email, password, role, hashedVerificationCode],
+    );
 
-  /* <------------------ IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL ------------------> */
-  if (
-    result?.length > 0 &&
-    result[0]?.insertId &&
-    role === ENUM_USER_ROLE.CUSTOMER
-  ) {
-    try {
-      await EmailHelpers.emailVerification({
-        name: '',
-        email,
-        code: verificationCode,
-      });
-
-      // IF USER UNVERIFIED
-      return {
-        accessToken: null,
-        refreshToken: null,
-        user: {
-          id: user?.insertId,
-          role: role,
-          email: email,
-          is_email_verified: 0,
-        },
-      };
-    } catch (err) {
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to send verification email',
+    if (!createdUser?.insertId) {
+      // ROLLBACK TRANSACTION
+      await connection.rollback();
+      throw new AppError(httpStatus.BAD_REQUEST, 'User Not Created');
+    } else if (createdUser?.insertId) {
+      // CREATE USER PROFILE ON DATABASE
+      const [result] = await connection.query<ResultSetHeader>(
+        'INSERT INTO profiles (user_id, name,  phone, address, country, city, postcode, date_of_birth, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          createdUser.insertId,
+          name,
+          phone,
+          address,
+          country,
+          city,
+          postcode,
+          moment(date_of_birth, 'DD-MM-YYYY').format('YYYY-MM-DD'),
+          gender,
+        ],
       );
+      // USER NOT CREATED
+      if (!result.insertId) {
+        // ROLLBACK TRANSACTION
+        await connection.rollback();
+        throw new AppError(httpStatus.BAD_REQUEST, 'User Not Created');
+      }
+
+      /* <------------------ IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL ------------------> */
+      if (createdUser?.insertId && role === ENUM_USER_ROLE.CUSTOMER) {
+        try {
+          await EmailHelpers.emailVerification({
+            name: '',
+            email,
+            code: verificationCode,
+          });
+
+          // IF USER UNVERIFIED
+          return {
+            accessToken: null,
+            refreshToken: null,
+            user: {
+              id: createdUser?.insertId,
+              role: role,
+              email: email,
+              is_email_verified: 0,
+            },
+          };
+        } catch (err) {
+          throw new AppError(
+            httpStatus.INTERNAL_SERVER_ERROR,
+            'Failed to send verification email',
+          );
+        }
+      }
+
+      // COMMIT TRANSACTION
+      await connection.commit();
     }
+  } catch (error) {
+    // ROLLBACK TRANSACTION
+    await connection.rollback();
+    throw error;
+  } finally {
+    // RELEASE CONNECTION
+    connection.release();
   }
 
   // if (role !== ENUM_USER_ROLE.CUSTOMER) {
