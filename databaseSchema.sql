@@ -74,21 +74,26 @@ CREATE TABLE packages (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
 
-
--- STOCK
-CREATE TABLE stocks (
+-- DISCOUNT
+CREATE TABLE coupons (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    productId INT NOT NULL,
-)
--- MESSAGE
-CREATE TABLE message (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    message LONGTEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    code VARCHAR(255) NOT NULL UNIQUE,
+    discount_type enum('percent', 'fixed') NOT NULL,
+    discount_value DECIMAL(10, 2) NOT NULL,
+    minimum_spend DECIMAL(10, 2) DEFAULT NULL,
+    used BOOLEAN DEFAULT 0 NOT NULL,
 );
+
+CREATE TABLE coupon_usages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    coupon_id INT NOT NULL,
+    user_id INT NOT NULL,
+    order_id INT NOT NULL,
+    used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (coupon_id) REFERENCES coupons (id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
+);
+
 
 -- FAQ
 CREATE TABLE faqs (
@@ -111,20 +116,10 @@ CREATE TABLE carts (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
 );
 
--- ORDERS
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     order_id VARCHAR(50) NOT NULL UNIQUE,
-    tracking_number VARCHAR(50) NOT NULL,
-    shipping_info JSON NOT NULL,
-    payment_info JSON NOT NULL,
-    payment_method ENUM(
-        'cash',
-        'card',
-        'bank',
-        'online'
-    ) NOT NULL,
     status ENUM(
         'pending',
         'confirmed',
@@ -140,50 +135,60 @@ CREATE TABLE orders (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
-
--- Order Items table
 CREATE TABLE order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
-    price DECIMAL(10, 2) NOT NULL, -- Add product price at the time of the order
+    price DECIMAL(10,2) NOT NULL, -- Product price at the time of order
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
-)
--- DISCOUNT
-CREATE TABLE coupons (
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(255) NOT NULL UNIQUE,
-    discount_type enum('percentage', 'fixed') NOT NULL,
-    discount_amount DECIMAL(10, 2) NOT NULL,
-    minimum_spend DECIMAL(10, 2) NOT NULL,
-    used BOOLEAN DEFAULT 0 NOT NULL,
+    order_id INT NOT NULL,
+    transaction_id VARCHAR(50) NOT NULL UNIQUE,
+    amount DECIMAL(10,2) NOT NULL,
+    method ENUM('cash', 'card', 'bank', 'online') NOT NULL,
+    status ENUM('pending', 'completed', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+CREATE TABLE shipping_info (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    recipient_name VARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    tracking_number VARCHAR(50) NOT NULL UNIQUE,
+    carrier VARCHAR(100) NOT NULL,
+    status ENUM('pending', 'shipped', 'delivered') NOT NULL DEFAULT 'pending',
+    estimated_delivery TIMESTAMP DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
-CREATE TABLE coupon_usages (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    coupon_id INT NOT NULL,
-    user_id INT NOT NULL,
-    order_id INT NOT NULL,
-    used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coupon_id) REFERENCES coupons (id) ON DELETE CASCADE,
-    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
-);
 
 -- REVIEW
 CREATE TABLE reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     user_id INT NOT NULL,
-    rating INT NOT NULL,
-    comment LONGTEXT NOT NULL,
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment LONGTEXT DEFAULT NULL,
+    is_verified BOOLEAN DEFAULT FALSE, -- True if the user has bought the product
+    helpful_count INT NOT NULL DEFAULT 0, -- Number of users who liked the review
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- NEWSLETTERS
@@ -208,8 +213,9 @@ CREATE TABLE favorite_products (
 -- meta data
 CREATE TABLE meta_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    title TEXT NOT NULL,
-    description LONGTEXT NOT NULL,
+    meta_key VARCHAR(100) NOT NULL,  -- Helps categorize metadata (e.g., 'homepage', 'product_page', 'blog_post')
+    title VARCHAR(255) NOT NULL,  -- Optimized for shorter titles
+    description TEXT NOT NULL,  -- Use TEXT unless you need very long descriptions
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
