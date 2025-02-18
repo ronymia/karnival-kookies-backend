@@ -6,7 +6,7 @@ const createSchema = z.object({
       .number({ required_error: 'Product ID is required' })
       .int()
       .nonnegative('Product can not be Negative Number'),
-    email: z.string().email('Invalid email format'),
+    user_id: z.number({ required_error: 'User ID is required' }),
     quantity: z
       .number({ required_error: 'Quantity is required' })
       .int()

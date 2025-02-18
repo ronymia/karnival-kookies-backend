@@ -4,26 +4,27 @@ import { pool } from '../../../shared/mySQL';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 //   CREATE A NEW CART
 const createCart = async (payload: any): Promise<any> => {
-  const { product_id, email, quantity } = payload;
+  const { product_id, user_id, quantity } = payload;
 
-  // Check if cart item already exists
-  const [exists] = (await pool.query(
-    'SELECT * FROM carts WHERE email = ? AND product_id = ?',
-    [email, product_id],
-  )) as any[];
+  // CHECK CART EXIST WITH PRODUCT AND USER
+  const [exists] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM carts WHERE user_id = ? AND product_id = ?',
+    [user_id, product_id],
+  );
 
-  //
+  // IF CART ALREADY EXIST
   if (exists?.length) {
     throw new AppError(httpStatus.CONFLICT, 'Already in cart list');
   }
 
   // Insert new cart item
-  const [result] = await pool.query(
-    'INSERT INTO carts (product_id, email, quantity) VALUES (?, ?, ?)',
-    [product_id, email, quantity],
+  const [result] = await pool.query<ResultSetHeader>(
+    'INSERT INTO carts (product_id, user_id, quantity) VALUES (?, ?, ?)',
+    [product_id, user_id, quantity],
   );
 
   //
