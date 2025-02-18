@@ -58,6 +58,7 @@ CREATE TABLE products (
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
 );
 
+-- PACKAGE
 CREATE TABLE packages (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -116,6 +117,7 @@ CREATE TABLE carts (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
 );
 
+-- ORDERS
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -135,6 +137,8 @@ CREATE TABLE orders (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
+
+-- ORDER ITEMS
 CREATE TABLE order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -146,6 +150,8 @@ CREATE TABLE order_items (
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
+
+-- PAYMENT INFORMATION
 CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -157,6 +163,8 @@ CREATE TABLE payments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
+
+-- SHIPPING INFORMATION
 CREATE TABLE shipping_info (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -210,7 +218,7 @@ CREATE TABLE favorite_products (
     FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 );
 
--- meta data
+-- META DATA
 CREATE TABLE meta_data (
     id INT AUTO_INCREMENT PRIMARY KEY,
     meta_key VARCHAR(100) NOT NULL,  -- Helps categorize metadata (e.g., 'homepage', 'product_page', 'blog_post')

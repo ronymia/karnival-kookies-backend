@@ -7,7 +7,7 @@ import { PasswordHelpers } from '../../../helpers/passwordHelpers';
 import { pool } from '../../../shared/mySQL';
 import { generateCode } from './auth.utils';
 import { EmailHelpers } from '../../../helpers/emailHelpers';
-import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
+import { Secret } from 'jsonwebtoken';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { ENUM_USER_ROLE } from '../../../enums/user';
 import moment from 'moment';
@@ -243,6 +243,46 @@ const loginUser = async (payload: TLoginUser) => {
   };
 };
 
+const getAccessToken = async (email: string) => {
+  // GET USER BY EMAIL
+  const [row] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [email],
+  );
+
+  // EXTRACT USER FROM RESPONSE
+  const user = row[0];
+
+  // IF USER NOT FOUND
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, ' User not found');
+  }
+
+  // GENERATE NEW ACCESS TOKEN
+  const accessToken = JwtHelpers.createToken(
+    { id: user?.id, email: user?.email, role: user?.role },
+    config.jwt.access_token as Secret,
+    config.jwt.access_token_expires_in as string,
+  );
+  // GENERATE NEW REFRESH TOKEN
+  const refreshToken = JwtHelpers.createToken(
+    { id: user?.id, email: user?.email, role: user?.role },
+    config.jwt.refresh_token as Secret,
+    config.jwt.refresh_token_expires_in as string,
+  );
+
+  // IF USER VERIFIED
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user?.id,
+      role: user?.role,
+      email: user?.email,
+      is_email_verified: user?.is_email_verified,
+    },
+  };
+};
 const refreshToken = async (token: string) => {
   // Invalid token - synchronous
   let verifiedToken = null;
@@ -292,67 +332,65 @@ const refreshToken = async (token: string) => {
 };
 
 // PASSWORD RESET
-const resetPassword = async (email: string, password: string) => {
-  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-    email,
-  ])) as any[];
+const resetPassword = async ({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) => {
+  const [user] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [email],
+  );
 
-  const user = rows[0];
-
-  if (!user) {
+  // IF USER NOT FOUND
+  if (user.length === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not Found');
   }
 
-  const hashedPassword = await PasswordHelpers.passwordHash(password);
-
-  const result = await pool.query(
-    'UPDATE users SET password = ?, code = NULL WHERE email = ?',
-    [hashedPassword, email],
+  const result = await pool.query<ResultSetHeader>(
+    'UPDATE users SET password = ? WHERE email = ?',
+    [password, email],
   );
 
-  //
+  // SEND RESET PASSWORD EMAIL
   return result;
 };
 
 //  SEND PASSWORD CODE
 const sendPasswordCode = async (email: string) => {
-  console.log({ ResetEmail: email });
+  // GET USER BY MAIL
+  const [user] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [email],
+  );
 
-  const code = generateCode() + '';
-  console.log({ code });
-
-  // Check if the user exists
-  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-    email,
-  ])) as any[];
-
-  const user = rows[0];
-
-  if (!user) {
+  // USER NOT FOUND
+  if (user.length === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not Found');
   }
-  // Hash the code
-  const hashedCode = await PasswordHelpers.passwordHash(code);
+  // EMAIL VERIFICATION CODE
+  const verificationCode = await generateCode();
+  const hashedCode = await PasswordHelpers.passwordHash(verificationCode);
 
   // Update the user with the hashed code
-  await pool.query('UPDATE users SET code = ? WHERE email = ?', [
-    hashedCode,
-    email,
-  ]);
+  const result = await pool.query<ResultSetHeader>(
+    'UPDATE users SET code = ? WHERE email = ?',
+    [hashedCode, email],
+  );
 
   // Send reset password email
-  await EmailHelpers.resetPasswordCode(user.name, user.email, code);
+  const emailSendInformation = await EmailHelpers.resetPasswordCode({
+    name: user[0]?.name,
+    email: user[0]?.email,
+    code: verificationCode,
+  });
 
   // SEND TO CONTROLLER
   return {
-    success: true,
-    message: 'Code sent',
-    // user: {
-    //   id: user.id,
-    //   name: user.name,
-    //   email: user.email,
-    // },
-    // email: user.email,
+    result,
+    emailSendInformation,
   };
 };
 
@@ -430,45 +468,6 @@ const verifyUserMail = async (payload: { email: string; otp: string }) => {
   };
 };
 
-// GET CURRENT USER
-const getCurrentUser = async (token: Secret) => {
-  try {
-    const decoded = jwt.verify(
-      token as string,
-      config.jwt.refresh_token as string,
-    ) as JwtPayload | null;
-
-    if (!decoded || typeof decoded === 'string' || !decoded.email) {
-      return { user: null };
-    }
-
-    // Query the database for the user
-    const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-      decoded.email,
-    ])) as any[];
-
-    const result = rows[0];
-    if (result?.isVerified) {
-      return {
-        user: {
-          id: result.id,
-          role: result.role,
-          name: result.name,
-          phone: result.phone,
-          email: result.email,
-          token,
-          isVerified: result.isVerified,
-        },
-      };
-    } else {
-      return { user: null };
-    }
-  } catch (err) {
-    // Handle invalid token or other errors
-    return { user: null };
-  }
-};
-
 // GET USER BY TOKEN
 const getUserByToken = async (id: number) => {
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -483,14 +482,76 @@ const getUserByToken = async (id: number) => {
   return rows[0];
 };
 
-//
+// GET USER BY TOKEN
+const getUserByMail = async (email: string) => {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [email],
+  );
+
+  if (rows?.length === 0) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not Found');
+  }
+
+  return rows[0];
+};
+
+// VERIFY EMAIL CODE
+const verifyEmailCode = async (payload: { email: string; otp: string }) => {
+  // GET USER BY MAIL
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE email = ?',
+    [payload?.email],
+  );
+  // EXTRACT USER
+  const user = rows[0];
+
+  // USER NOT EXIST
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not Found');
+  }
+
+  // CHECK CODE ON DATABASE
+  if (!user?.code) {
+    return {
+      success: false,
+      message: 'Code not sent. Please send code again',
+    };
+  }
+
+  // DECODE CODE AND VERIFY CODE
+  const decryptedCode = await PasswordHelpers.passwordMatch(
+    payload?.otp,
+    user?.code,
+  );
+  // IF CODE NOT MATCH
+  if (!decryptedCode) {
+    return { success: false, message: 'Invalid OTP' };
+  }
+
+  // UPDATE USER ON DATABASE AS VERIFIED
+  await pool.query(
+    'UPDATE users SET code = NULL, is_email_verified = ? WHERE email = ?',
+    [true, user?.email],
+  );
+
+  // SEND TO CONTROLLER
+  return {
+    success: true,
+    message: 'User verified',
+  };
+};
+
+// EXPORT
 export const AuthServices = {
   registerUser,
   loginUser,
   resetPassword,
   sendPasswordCode,
   verifyUserMail,
-  getCurrentUser,
   refreshToken,
   getUserByToken,
+  getUserByMail,
+  verifyEmailCode,
+  getAccessToken,
 };

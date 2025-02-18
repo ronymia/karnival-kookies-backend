@@ -65,6 +65,34 @@ const loginUser: RequestHandler = catchAsync(
 );
 
 // REFRESH TOKEN
+const getAccessToken: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const email = req.body.email;
+
+    const { refreshToken, ...result } =
+      await AuthServices.getAccessToken(email);
+
+    if (refreshToken) {
+      // SET REFRESH TOKEN TO COOKIE
+      const cookieOptions: CookieOptions = {
+        secure: config.node_env === 'production',
+        httpOnly: true,
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7DAYS
+      };
+      res.cookie('refresh_token', refreshToken, cookieOptions);
+    }
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: `success`,
+      data: result,
+    });
+  },
+);
+// REFRESH TOKEN
 const refreshToken: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const refresh_token = req.cookies;
@@ -91,10 +119,14 @@ const refreshToken: RequestHandler = catchAsync(
 // RESET PASSWORD
 const resetPassword: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const email = req?.params?.email;
-    const { ...password } = req.body;
+    const { ...payloadData } = req.body;
 
-    const result = await AuthServices.resetPassword(email, password?.password);
+    // HASH PASSWORD
+    payloadData.password = await PasswordHelpers.passwordHash(
+      payloadData?.password,
+    );
+
+    const result = await AuthServices.resetPassword(payloadData);
 
     // SET REFRESH TOKEN TO COOKIE
     // const cookieOptions = {
@@ -135,22 +167,14 @@ const sendPasswordCode: RequestHandler = catchAsync(
     const email = req.body.email;
 
     const result = await AuthServices.sendPasswordCode(email);
-    // SET REFRESH TOKEN TO COOKIE
-    // const cookieOptions = {
-    //   secure: config.node_env === 'product',
-    //   httpOnly: true,
-    //   maxAge: 0,
-    // };
-    // res.clearCookie('refresh_token', cookieOptions);
 
-    res.json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Code sent',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: `Password Code Sent successfully at ${email}`,
+      data: result,
+    });
   },
 );
 
@@ -183,33 +207,6 @@ const verifyUserMail: RequestHandler = catchAsync(
   },
 );
 
-// GET CURRENT USER
-const getCurrentUser: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const token = req.cookies.refresh_token;
-    // console.log({ refresh_token: req });
-
-    const result = await AuthServices.getCurrentUser(token);
-
-    res.json(result);
-    // SET REFRESH TOKEN TO COOKIE
-    // const cookieOptions = {
-    //   secure: config.node_env === 'production',
-    //   httpOnly: true,
-    //   // sameSite: 'none',
-    //   maxAge: 7 * 24 * 60 * 60 * 1000,
-    // };
-    // res.cookie('refresh_token', refreshToken, cookieOptions);
-
-    // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'user Register successfully',
-    //   data: result,
-    // });
-  },
-);
 // GET USER BY TOKEN
 const getUserByToken: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -223,8 +220,44 @@ const getUserByToken: RequestHandler = catchAsync(
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'user Register successfully',
+      message: 'user retrieve successfully',
       data: result,
+    });
+  },
+);
+
+// GET USER BY TOKEN
+const getUserByMail: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const email = req.params?.email;
+
+    const result = await AuthServices.getUserByMail(email);
+
+    // res.json(result);
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'user retrieve successfully',
+      data: result,
+    });
+  },
+);
+
+// VERIFY EMAIL CODE
+const verifyEmailCode: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const { ...payloadData } = req.body;
+
+    const result = await AuthServices.verifyEmailCode(payloadData);
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: result?.success ? httpStatus.OK : httpStatus.BAD_REQUEST,
+      success: result?.success,
+      message: result?.message,
+      data: null,
     });
   },
 );
@@ -237,6 +270,8 @@ export const AuthControllers = {
   resetPassword,
   sendPasswordCode,
   verifyUserMail,
-  getCurrentUser,
   getUserByToken,
+  getUserByMail,
+  verifyEmailCode,
+  getAccessToken,
 };

@@ -2,26 +2,9 @@ import express from 'express';
 import { AuthControllers } from './auth.controller';
 import { AuthValidations } from './auth.validation';
 import validateRequest from '../../middlewares/validateRequest';
-import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
-import config from '../../../config';
 import verifyToken from '../../middlewares/verifyToken';
 
 const router = express.Router();
-
-router.post('/jwt', async (req, res) => {
-  const user = req.body;
-  const token = jwt.sign(user, config.jwt.refresh_token as Secret, {
-    expiresIn: config.jwt.refresh_token_expires_in,
-  });
-  res
-    .cookie('refresh_token', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-    .json({ success: true });
-});
 
 /***************
  * @api {post} /products
@@ -55,27 +38,28 @@ router.post(
   AuthControllers.loginUser,
 );
 
+// LOGOUT
+router.post('/logOut', AuthControllers.logOut);
+
 // REFRESH TOKEN
 router.post(
   '/refresh-token',
   validateRequest(AuthValidations.refreshTokenZodSchema),
   AuthControllers.refreshToken,
 );
+// GET ACCESS TOKEN
+router.post('/get-access-token', AuthControllers.getAccessToken);
 
 // RESET PASSWORD
-router.put('/user/reset-password/:email', AuthControllers.resetPassword);
-
-// LOGOUT
-router.post('/logOut', AuthControllers.logOut);
-
-// USER EXIST OR NOT CHECK
-router.post('/is-user-exist', AuthControllers.sendPasswordCode);
+router.put('/reset-password', AuthControllers.resetPassword);
+router.post('/send-verification-code', AuthControllers.sendPasswordCode); // SEND VERIFICATION CODE
+router.post('/verify-email-code', AuthControllers.verifyEmailCode); // VERIFY EMAIL CODE
 
 // VERIFY USER MAIL
 router.put('/verify-user-email', AuthControllers.verifyUserMail);
 
-// CURRENT USER
-router.get('/user/info', AuthControllers.getCurrentUser);
+// GET USER BY TOKEN OR MAIL
 router.get('/user-by-token', verifyToken, AuthControllers.getUserByToken);
+router.get('/user-by-mail/:email', verifyToken, AuthControllers.getUserByMail);
 
 export const AuthRoutes = router;

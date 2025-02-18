@@ -118,41 +118,51 @@ async function emailVerification({
   return { success: true, messageId: info.messageId };
 }
 
-//   RESET PASSWORD CODE
-async function resetPasswordCode(
-  name: string,
-  email: string,
-  code: string | number,
-) {
+// RESET PASSWORD CODE
+async function resetPasswordCode({
+  name,
+  email,
+  code,
+}: {
+  name: string;
+  email: string;
+  code: string;
+}) {
+  // Convert code to string to ensure consistency
+  const codeStr = String(code);
+
   // send mail with defined transport object
   const info = await transporter.sendMail({
-    from: '"Karnival Kookies" <karnivalkookies.com>', // sender address
+    from: '"Karnival Kookies" <no-reply@karnivalkookies.com>', // Corrected sender email
     to: email, // list of receivers
-    subject: 'Reset your password at karnivalkookies.com!', // Subject line
-    text: 'Reset Password', // plain text body
+    subject: 'Reset your password at Karnival Kookies!', // Subject line
+    text: `Hello ${name}, use this code to reset your password: ${codeStr}`, // plain text fallback
     html: `
-      <p>Hello ${name}, </p>
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <p>Hello ${name},</p>
 
-      <div style="margin: 20px 0; ">
-        <p style="margin: 0;">Thank you for using karnivalkookies.com. We're excited to have you on board! </p>
-        <p style="margin: 0;">Please enter the code below on the verification page to reset your password.</p>
+        <div style="margin: 20px 0;">
+          <p>Thank you for using Karnival Kookies! Please enter the code below on the verification page to reset your password.</p>
+        </div>
+
+        <h1 style="background-color: #007bff; color: #fff; padding: 15px; border-radius: 8px; text-align: center; display: inline-block;">
+          ${codeStr}
+        </h1>
+
+        <div style="margin: 20px 0;">
+          <p>If you have any questions, feel free to reach out to us at <a href="mailto:karnivalkookies@gmail.com">karnivalkookies@gmail.com</a>.</p>
+          <p>Visit our website at <a href="https://karnivalkookies.com">karnivalkookies.com</a> for more details.</p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0;">Best regards,</h4>
+          <p style="margin: 0;">Karnival Kookies Team</p>
+        </div>
       </div>
-
-      <h1 style="background-color: #007bff; color: #fff; padding: 10px; border-radius: 5px; text-align: center;">${code}</h1>
-
-      <div style="margin: 20px 0; ">
-        <p style="margin: 0;">If you have any questions, feel free to reach out to us at karnivalkookies@gmail.com.</p>
-        <p style="margin: 0;">Visit our website at <a href="https://karnivalkookies.com">karnivalkookies.com</a></a> for more details.</p>
-      </div>
-
-      <div>
-        <h4 style="margin: 0;">Best regards,</h4>
-        <p style="margin: 0;">karnivalkookies.com</p>
-      </div>
-      `, // html body
+    `,
   });
+
   return info;
-  // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
 }
 
 // ORDER CONFORMATION MAIL
