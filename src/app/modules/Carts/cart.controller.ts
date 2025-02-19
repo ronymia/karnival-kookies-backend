@@ -7,13 +7,14 @@ import pick from '../../../shared/pick';
 import { paginationFields } from '../../../constants/pagination';
 import { cartFilterableFields } from './cart.constant';
 import { productFilterableFields } from '../Products/product.constant';
+import AppError from '../../../errors/AppError';
 
 // CREATE A NEW CART
 const createCart: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const { ...cartData } = req.body;
+    const { ...payloadData } = req.body;
 
-    const result = await CartServices.createCart(cartData);
+    const result = await CartServices.createCart(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -26,13 +27,11 @@ const createCart: RequestHandler = catchAsync(
 );
 
 // GET ALL CART USER SPECIFIC BY EMAIL
-const getCartByEmail: RequestHandler = catchAsync(
+const getCartByUserId: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const email = req.params.email;
+    const user_id = req.params.user_id;
 
-    const result = await CartServices.getCartByEmail(email);
+    const result = await CartServices.getCartByUserId(Number(user_id));
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -41,6 +40,23 @@ const getCartByEmail: RequestHandler = catchAsync(
       message: 'User Cart Data fetch successfully',
       meta: result.meta,
       data: result.data,
+    });
+  },
+);
+
+// UPDATE QUANTITY OF CART PRODUCT
+const updateQuantityOfCartProduct: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const { ...payloadData } = req.body;
+
+    const result = await CartServices.updateQuantityOfCartProduct(payloadData);
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Add quantity successfully',
+      data: result,
     });
   },
 );
@@ -62,23 +78,6 @@ const getAllCarts: RequestHandler = catchAsync(
     //   message: 'Cart Data fetch successfully',
     //   data: result,
     // });
-  },
-);
-
-// UPDATE CART
-const updateCart: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const { ...payloadData } = req.body;
-
-    const result = await CartServices.updateCart(payloadData);
-
-    // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Order status updated successfully',
-      data: result,
-    });
   },
 );
 
@@ -106,7 +105,7 @@ const checkOutByEmail: RequestHandler = catchAsync(
 );
 
 // CHECKOUT BY EMAIL
-const checkOut: RequestHandler = catchAsync(
+const cartCheckOut: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     // const filters = pick(req.query, cartFilterableFields);
     // const paginationOptions = pick(req.query, paginationFields);
@@ -146,33 +145,30 @@ const updateCartStatus: RequestHandler = catchAsync(
 );
 
 // DELETE CART
-const deleteCart: RequestHandler = catchAsync(
+const removeFromCart: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { ids } = req.params;
 
-    const result = await CartServices.deleteCart(Number(id));
+    // FILTER ID AND  CONVERT TO NUMBER
+    const parsedIds = ids
+      .split(',')
+      .map((id) => Number(id.trim()))
+      .filter((id) => !isNaN(id)); // ENSURE ALL IDS ARE VALID NUMBER
+
+    if (parsedIds.length === 0) {
+      throw new AppError(
+        httpStatus.UNPROCESSABLE_ENTITY,
+        `No valid IDs provided. ${ids}`,
+      );
+    }
+
+    const result = await CartServices.removeFromCart(parsedIds);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'Cart deleted successfully',
-      data: result,
-    });
-  },
-);
-// DELETE BULK CART
-const deleteBulkCart: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const { ...cartData } = req.body;
-
-    const result = await CartServices.deleteBulkCart(cartData);
-
-    // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Full Cart deleted successfully',
+      message: 'Remove from cart successfully',
       data: result,
     });
   },
@@ -180,12 +176,11 @@ const deleteBulkCart: RequestHandler = catchAsync(
 
 export const CartControllers = {
   createCart,
-  getCartByEmail,
+  getCartByUserId,
+  updateQuantityOfCartProduct,
   getAllCarts,
-  updateCart,
   checkOutByEmail,
-  checkOut,
+  cartCheckOut,
   updateCartStatus,
-  deleteCart,
-  deleteBulkCart,
+  removeFromCart,
 };

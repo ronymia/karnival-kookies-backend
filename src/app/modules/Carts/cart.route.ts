@@ -33,47 +33,40 @@ router.post(
   CartControllers.createCart,
 );
 
-//  GET ALL CART USER SPECIFIC BY EMAIL
-router.get('/:email', verifyToken, CartControllers.getCartByEmail);
-
-//  GET ALL CART FOR ADMIN
-router.get(
-  '/checkout/admin/all',
-  verifyToken,
-  verifyAdmin,
-  CartControllers.getAllCarts,
-);
+//  GET ALL CART USER SPECIFIC BY USER ID
+router.get('/:user_id', verifyToken, CartControllers.getCartByUserId);
 
 //  UPDATE
-router.put(
-  '/',
-  verifyToken,
-  //   validateRequest(CartValidations.createSchema),
-  CartControllers.updateCart,
-);
-
-// CHECK OUT BY EMAIL
-router.get('/checkout/:email', verifyToken, CartControllers.checkOutByEmail);
+router.put('/', verifyToken, CartControllers.updateQuantityOfCartProduct);
 
 // CHECK OUT
 router.post(
   '/checkout',
   verifyToken,
   validateRequest(CartValidations.checkOutSchema),
-  CartControllers.checkOut,
+  CartControllers.cartCheckOut,
 );
 
-// UPDATE CART STATUS
-router.put(
-  '/checkout/:id',
-  verifyToken,
-  verifyAdmin,
-  CartControllers.updateCartStatus,
-);
+// //  GET ALL CART FOR ADMIN
+// router.get(
+//   '/checkout/admin/all',
+//   verifyToken,
+//   verifyAdmin,
+//   CartControllers.getAllCarts,
+// );
+
+// // CHECK OUT BY EMAIL
+// router.get('/checkout/:email', verifyToken, CartControllers.checkOutByEmail);
+
+// // UPDATE CART STATUS
+// router.put(
+//   '/checkout/:id',
+//   verifyToken,
+//   verifyAdmin,
+//   CartControllers.updateCartStatus,
+// );
 
 // DELETE CART CART
-router.delete('/:id', verifyToken, verifyAdmin, CartControllers.deleteCart);
-// DELETE CART BULK CART
-router.delete('/', verifyToken, verifyAdmin, CartControllers.deleteBulkCart);
+router.delete('/:ids', verifyToken, CartControllers.removeFromCart);
 
 export const CartRoutes = router;

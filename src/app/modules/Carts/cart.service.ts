@@ -31,44 +31,51 @@ const createCart = async (payload: any): Promise<any> => {
   return result;
 };
 
-// GET ALL CART USER SPECIFIC BY EMAIL
-const getCartByEmail = async (email: string) => {
+// GET ALL CART USER SPECIFIC BY USER ID
+const getCartByUserId = async (user_id: number) => {
   // Query to get cart items with user and product details
   const cartQuery = `
     SELECT 
       c.*,
       JSON_OBJECT(
         'id', u.id,
-        'name', u.name,
         'email', u.email
       ) AS user,
       JSON_OBJECT(
         'id', p.id,
         'name', p.name,
-        'regular_price', p.regular_price,
-        'discount_price', p.discount_price,
+        'price', p.price,
+        'is_discount_enable', p.is_discount_enable,
+        'discount_type', p.discount_type,
+        'discount_value', p.discount_value,
         'category_id', p.category_id,
-        'images', p.images
+        'images', p.images,
+        'net_price', 
+        CASE
+          WHEN p.discount_type = 'fixed' THEN p.price - p.discount_value
+          WHEN p.discount_type = 'percent' THEN p.price - (p.price * p.discount_value / 100)
+          ELSE p.price
+        END
       ) AS product
     FROM carts c
-    LEFT JOIN users u ON c.email = u.email
+    LEFT JOIN users u ON c.user_id = u.id
     LEFT JOIN products p ON c.product_id = p.id
-    WHERE c.email = ?;
+    WHERE c.user_id = ?;
   `;
 
   // Execute the query
-  const [cartItems] = (await pool.query(cartQuery, [email])) as any[];
+  const [cartItems] = await pool.query<RowDataPacket[]>(cartQuery, [user_id]);
 
   // Query to get total count of cart items
   const totalItemQuery = `
     SELECT COUNT(*) as count
     FROM carts
-    WHERE email = ?;
+    WHERE user_id = ?;
   `;
 
-  const [totalItemResult] = (await pool.query(totalItemQuery, [
-    email,
-  ])) as any[];
+  const [totalItemResult] = await pool.query<RowDataPacket[]>(totalItemQuery, [
+    user_id,
+  ]);
   const totalItem = totalItemResult[0].count;
 
   return {
@@ -77,6 +84,18 @@ const getCartByEmail = async (email: string) => {
     },
     data: cartItems,
   };
+};
+
+// UPDATE CART
+const updateQuantityOfCartProduct = async (payload: any): Promise<any> => {
+  const { exists, quantity } = payload;
+
+  const result = await pool.query(
+    'UPDATE carts SET quantity = ? WHERE id = ?',
+    [quantity, exists.id],
+  );
+
+  return result;
 };
 
 // GET ALL CARTS FOR ADMIN
@@ -143,18 +162,6 @@ const getAllCarts = async (
     currentPage: page,
     totalPages: Math.ceil(totalItem / limit!),
   };
-};
-
-// UPDATE CART
-const updateCart = async (payload: any): Promise<any> => {
-  const { exists, quantity } = payload;
-
-  const result = await pool.query(
-    'UPDATE carts SET quantity = ?, WHERE id = ?',
-    [quantity, exists.id],
-  );
-
-  return result;
 };
 
 // CHECKOUT BY EMAIL
@@ -237,7 +244,7 @@ const checkOutByEmail = async (
 };
 
 // CHECK OUT
-const checkOut = async (payload: any) => {
+const cartCheckOut = async (payload: any) => {
   const {
     userName,
     userEmail,
@@ -288,34 +295,26 @@ const updateCartStatus = async (id: any, payload: any) => {
 };
 
 // DELETE CART
-const deleteCart = async (id: number) => {
-  const [result] = await pool.query('DELETE FROM carts WHERE id = ?', [id]);
+const removeFromCart = async (ids: number[]) => {
+  // GENERATE PLACEHOLDER FOR QUERY
+  const placeholders = ids.map(() => '?');
 
-  return result;
-};
-// DELETE BULK CART
-const deleteBulkCart = async (payload: any) => {
-  if (!Array.isArray(payload) || payload.length === 0) {
-    return { message: 'No IDs provided' };
-  }
-  const placeholders = payload.map(() => '?').join(',');
+  // DELETE QUERY
+  const query = `DELETE FROM carts WHERE id IN (${placeholders})`;
 
-  // Execute the DELETE query for all the provided payload
-  const [result] = await pool.query(
-    `DELETE FROM carts WHERE id IN (${placeholders})`,
-    payload,
-  );
+  // EXECUTE QUERY
+  const [result] = await pool.query(query, ids);
+
   return result;
 };
 //
 export const CartServices = {
   createCart,
-  getCartByEmail,
+  getCartByUserId,
+  updateQuantityOfCartProduct,
   getAllCarts,
-  updateCart,
   checkOutByEmail,
-  checkOut,
+  cartCheckOut,
   updateCartStatus,
-  deleteCart,
-  deleteBulkCart,
+  removeFromCart,
 };
