@@ -43,7 +43,7 @@ router.put('/', verifyToken, CartControllers.updateQuantityOfCartProduct);
 router.post(
   '/checkout',
   verifyToken,
-  validateRequest(CartValidations.checkOutSchema),
+  // validateRequest(CartValidations.checkOutSchema),
   CartControllers.cartCheckOut,
 );
 

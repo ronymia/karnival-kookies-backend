@@ -107,18 +107,15 @@ const checkOutByEmail: RequestHandler = catchAsync(
 // CHECKOUT BY EMAIL
 const cartCheckOut: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, cartFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    // const email = req.params.email;
     const { ...checkOutData } = req.body;
 
-    const result = await CartServices.checkOut(checkOutData);
+    const result = await CartServices.cartCheckOut(checkOutData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'Cart check out successfully',
+      message: 'Order placed successfully',
       data: result,
     });
   },
