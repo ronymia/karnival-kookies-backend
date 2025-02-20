@@ -121,7 +121,8 @@ CREATE TABLE carts (
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    order_id VARCHAR(50) NOT NULL UNIQUE,
+    order_number VARCHAR(50) NOT NULL UNIQUE,
+    tracking_number VARCHAR(255) NOT NULL,
     status ENUM(
         'pending',
         'confirmed',
@@ -132,7 +133,6 @@ CREATE TABLE orders (
     ) NOT NULL DEFAULT 'pending',
     status_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     delivery_time TIMESTAMP DEFAULT NULL,
-    notes LONGTEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -156,13 +156,16 @@ CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     transaction_id VARCHAR(50) NOT NULL UNIQUE,
+    stripe_payment_intent_id VARCHAR(255) DEFAULT NULL,
+    stripe_payment_method_id VARCHAR(255) DEFAULT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    method ENUM('cash', 'card', 'bank', 'online') NOT NULL,
-    status ENUM('pending', 'completed', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
+    method ENUM('cash', 'card', 'bank', 'online', 'stripe') NOT NULL,  -- Added 'stripe' as a method
+    status ENUM('pending', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
+
 
 -- SHIPPING INFORMATION
 CREATE TABLE shipping_info (
@@ -177,8 +180,7 @@ CREATE TABLE shipping_info (
     state VARCHAR(100) NOT NULL,
     country VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
-    tracking_number VARCHAR(50) NOT NULL UNIQUE,
-    carrier VARCHAR(100) NOT NULL,
+    carrier VARCHAR(100) NOT NULL DEFAULT 'Pathao Courier',
     delivery_instruction TEXT NOT NULL,
     status ENUM('pending', 'shipped', 'delivered') NOT NULL DEFAULT 'pending',
     estimated_delivery TIMESTAMP DEFAULT NULL,

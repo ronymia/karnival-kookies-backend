@@ -1,10 +1,8 @@
 import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
 import { pool } from '../../../shared/mySQL';
-import { TPaginationOptions } from '../../../interfaces/pagination';
-import { paginationHelpers } from '../../../helpers/paginationHelpers';
-import { EmailHelpers } from '../../../helpers/emailHelpers';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { GenerateTrackingAndOrderId } from '../Orders/order.utils';
 
 //   CREATE A NEW CART
 const createCart = async (payload: any): Promise<any> => {
@@ -98,200 +96,85 @@ const updateQuantityOfCartProduct = async (payload: any): Promise<any> => {
   return result;
 };
 
-// GET ALL CARTS FOR ADMIN
-const getAllCarts = async (
-  filters: any,
-  paginationOptions: TPaginationOptions,
-) => {
-  const { page, limit, offset } =
-    paginationHelpers.calculatePagination(paginationOptions);
-
-  const [checkoutItems] = (await pool.query(
-    'SELECT * FROM checkout ORDER BY createdAt DESC LIMIT ? OFFSET ?',
-    [limit, offset],
-  )) as any[];
-
-  const parsedCheckouts = checkoutItems.map((checkout: any) => {
-    const parsedCheckoutInfo = JSON.parse(checkout.checkoutInfo);
-    const parsedPaymentInfo = JSON.parse(checkout.paymentInfo);
-    return {
-      ...checkout,
-      checkoutInfo: parsedCheckoutInfo,
-      paymentInfo: parsedPaymentInfo,
-    };
-  });
-
-  const productIds = parsedCheckouts
-    .map((item: any) => item?.paymentInfo)
-    ?.flat()
-    ?.map((item: any) => item?.productId);
-
-  //
-  const [products] = (await pool.query(
-    'SELECT * FROM product WHERE id IN (?)',
-    [productIds],
-  )) as any[];
-
-  const finalCheckouts = parsedCheckouts.map((item: any) => {
-    const paymentInfoWithId = item?.paymentInfo?.map((payment: any) => {
-      const product = products?.find(
-        (product: any) => product?.id === payment?.productId,
-      );
-      //  console.log({ product });
-      return {
-        ...payment,
-        product: { ...product, images: JSON.parse(product?.images) },
-      };
-    });
-    //  console.log({ payIn: paymentInfoWithId });
-    return {
-      ...item,
-      paymentInfo: paymentInfoWithId,
-    };
-  });
-
-  // Get total count of checkout items
-  const [totalItemResult] = (await pool.query(
-    'SELECT COUNT(*) as count FROM checkout',
-  )) as any[];
-  const totalItem = totalItemResult[0].count;
-
-  return {
-    data: finalCheckouts,
-    total: totalItem,
-    currentPage: page,
-    totalPages: Math.ceil(totalItem / limit!),
-  };
-};
-
-// CHECKOUT BY EMAIL
-const checkOutByEmail = async (
-  filters: any,
-  paginationOptions: TPaginationOptions,
-  email: string,
-) => {
-  const { page = 1, perPage = 10 } = paginationOptions;
-
-  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-    email,
-  ])) as any[];
-
-  const user = rows[0];
-
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Invalid Email');
-  }
-
-  //
-  const offset = (Number(page) - 1) * Number(perPage);
-
-  // Get paginated and ordered checkout items
-  const [checkoutItems] = (await pool.query(
-    'SELECT * FROM checkout WHERE userEmail = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?',
-    [email, Number(perPage), offset],
-  )) as any[];
-
-  const parsedCheckouts = checkoutItems.map((checkout: any) => {
-    const parsedCheckoutInfo = JSON.parse(checkout.checkoutInfo);
-    const parsedPaymentInfo = JSON.parse(checkout.paymentInfo);
-    return {
-      ...checkout,
-      checkoutInfo: parsedCheckoutInfo,
-      paymentInfo: parsedPaymentInfo,
-    };
-  });
-
-  const productIds = parsedCheckouts
-    .map((item: any) => item?.paymentInfo)
-    ?.flat()
-    ?.map((item: any) => item?.productId);
-  const [products] = (await pool.query(
-    'SELECT * FROM product WHERE id IN (?)',
-    [productIds],
-  )) as any[];
-
-  const finalCheckouts = parsedCheckouts.map((item: any) => {
-    const paymentInfoWithId = item?.paymentInfo?.map((payment: any) => {
-      const product = products?.find(
-        (product: any) => product?.id === payment?.productId,
-      );
-      console.log({ product });
-      return {
-        ...payment,
-        product: { ...product, images: JSON.parse(product?.images) },
-      };
-    });
-    console.log({ payIn: paymentInfoWithId });
-    return {
-      ...item,
-      paymentInfo: paymentInfoWithId,
-    };
-  });
-
-  // Get total count of checkout items
-  const [totalItemResult] = (await pool.query(
-    'SELECT COUNT(*) as count FROM checkout WHERE userEmail = ?',
-    [email],
-  )) as any[];
-  const totalItem = totalItemResult[0].count;
-
-  return {
-    data: finalCheckouts,
-    total: totalItem,
-    currentPage: page,
-    totalPages: Math.ceil(totalItem / perPage),
-  };
-};
-
-// CHECK OUT
+// CART CHECKOUT
 const cartCheckOut = async (payload: any) => {
-  const {
-    userName,
-    userEmail,
-    checkoutInfo,
-    paymentInfo,
-    paymentMethod,
-    totalPayableAmount,
-    status,
-    isPaid,
-  } = payload;
+  const { user_id, order_items, shipping_info, payment } = payload;
+  const order_number = GenerateTrackingAndOrderId.generateOrderId();
+  const tracking_number = GenerateTrackingAndOrderId.generateTrackingNumber();
 
-  //
-  const orderId = crypto.randomUUID();
+  let connection;
 
-  // Insert checkout
-  const [result] = await pool.query(
-    'INSERT INTO checkout (userEmail, checkoutInfo, paymentInfo, paymentMethod, totalPayableAmount,orderId,status, isPaid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [
-      userEmail,
-      JSON.stringify(checkoutInfo),
-      JSON.stringify(paymentInfo),
-      paymentMethod,
-      totalPayableAmount.toFixed(2),
-      orderId,
-      status,
-      isPaid,
-    ],
-  );
-  // console.log({ result });
-  // SEND ORDER CONFORMATION MALI
-  await EmailHelpers.orderConfirmationMail(userName, userEmail, orderId);
-  // Insert checkout info and payment info (assuming they're separate tables)
-  // await pool.query("INSERT INTO checkout_info SET ?", checkoutInfo);
-  // await pool.query("INSERT INTO payment_info SET ?", paymentInfo);
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction(); // Start transaction
 
-  return { success: true, data: result };
-};
+    // Insert order
+    const [orderResult] = await connection.execute<ResultSetHeader>(
+      `INSERT INTO orders (user_id,order_number, tracking_number) VALUES (?, ?, ?)`,
+      [user_id, order_number, tracking_number],
+    );
+    const order_id = orderResult.insertId; // Get last inserted order ID
 
-// UPDATE CART STATUS
-const updateCartStatus = async (id: any, payload: any) => {
-  const { status } = payload;
-  const result = await pool.query(
-    'UPDATE checkout SET status = ? WHERE id = ?',
-    [status, id],
-  );
+    // Insert order items
+    const orderItemsValues = order_items.map((item) => [
+      order_id,
+      item.product_id,
+      item.quantity,
+      item.price,
+    ]);
+    await connection.query(
+      `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ?`,
+      [orderItemsValues],
+    );
 
-  return { success: true, data: result };
+    // Insert shipping info
+    await connection.execute(
+      `INSERT INTO shipping_info
+      (order_id, recipient_name, email, apartment, address, city, postal_code, state, country, phone, carrier, delivery_instruction)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        order_id,
+        shipping_info.recipient_name,
+        shipping_info.email,
+        shipping_info.apartment,
+        shipping_info.address,
+        shipping_info.city,
+        shipping_info.postal_code,
+        shipping_info.state,
+        shipping_info.country,
+        shipping_info.phone,
+        shipping_info.carrier,
+        shipping_info.delivery_instruction,
+      ],
+    );
+
+    // Insert payment
+    await connection.execute(
+      `INSERT INTO payments (order_id, transaction_id, amount, method, status) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        order_id,
+        payment.transaction_id,
+        payment.amount,
+        payment.method,
+        payment.status,
+      ],
+    );
+
+    // DELETE ITEMS FROM CART
+    await connection.query(`DELETE FROM carts WHERE user_id = ?`, [user_id]);
+
+    // COMMIT TRANSACTION IF ALL QUERIES SUCCEED
+    await connection.commit();
+    return { order_id };
+  } catch (error) {
+    // ROLLBACK TRANSACTION IF ENCOUNTERS AN ERROR
+    if (connection) await connection.rollback();
+    throw error;
+  } finally {
+    // RELEASE CONNECTION
+    if (connection) connection.release();
+  }
 };
 
 // DELETE CART
@@ -312,9 +195,6 @@ export const CartServices = {
   createCart,
   getCartByUserId,
   updateQuantityOfCartProduct,
-  getAllCarts,
-  checkOutByEmail,
   cartCheckOut,
-  updateCartStatus,
   removeFromCart,
 };

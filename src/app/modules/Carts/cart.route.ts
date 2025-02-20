@@ -1,6 +1,5 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
 import { CartControllers } from './cart.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import { CartValidations } from './cart.validation';
@@ -46,25 +45,6 @@ router.post(
   // validateRequest(CartValidations.checkOutSchema),
   CartControllers.cartCheckOut,
 );
-
-// //  GET ALL CART FOR ADMIN
-// router.get(
-//   '/checkout/admin/all',
-//   verifyToken,
-//   verifyAdmin,
-//   CartControllers.getAllCarts,
-// );
-
-// // CHECK OUT BY EMAIL
-// router.get('/checkout/:email', verifyToken, CartControllers.checkOutByEmail);
-
-// // UPDATE CART STATUS
-// router.put(
-//   '/checkout/:id',
-//   verifyToken,
-//   verifyAdmin,
-//   CartControllers.updateCartStatus,
-// );
 
 // DELETE CART CART
 router.delete('/:ids', verifyToken, CartControllers.removeFromCart);
