@@ -28,9 +28,9 @@ const userDashboard: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     // const filters = pick(req.query, productFilterableFields);
     // const paginationOptions = pick(req.query, paginationFields);
-    const email = req.params?.email;
+    const user_id = req.params?.user_id;
 
-    const result = await DashboardServices.userDashboard(email);
+    const result = await DashboardServices.userDashboard(Number(user_id));
 
     // SEND RESPONSE
     sendResponse<any>(res, {

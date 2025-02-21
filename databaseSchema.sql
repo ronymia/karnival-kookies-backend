@@ -75,25 +75,7 @@ CREATE TABLE packages (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
 
--- DISCOUNT
-CREATE TABLE coupons (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(255) NOT NULL UNIQUE,
-    discount_type enum('percent', 'fixed') NOT NULL,
-    discount_value DECIMAL(10, 2) NOT NULL,
-    minimum_spend DECIMAL(10, 2) DEFAULT NULL,
-    used BOOLEAN DEFAULT 0 NOT NULL,
-);
 
-CREATE TABLE coupon_usages (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    coupon_id INT NOT NULL,
-    user_id INT NOT NULL,
-    order_id INT NOT NULL,
-    used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coupon_id) REFERENCES coupons (id) ON DELETE CASCADE,
-    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
-);
 
 
 -- FAQ
@@ -187,6 +169,28 @@ CREATE TABLE shipping_info (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+
+-- DISCOUNT
+CREATE TABLE coupons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    discount_type enum('percent', 'fixed') NOT NULL,
+    discount_value DECIMAL(10, 2) NOT NULL,
+    minimum_spend DECIMAL(10, 2) DEFAULT NULL,
+    used BOOLEAN DEFAULT 0 NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE coupon_usages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    coupon_id INT NOT NULL,
+    user_id INT NOT NULL,
+    order_id INT NOT NULL,
+    used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (coupon_id) REFERENCES coupons (id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
 );
 
 

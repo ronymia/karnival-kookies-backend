@@ -7,22 +7,6 @@ import pick from '../../../shared/pick';
 import { paginationFields } from '../../../constants/pagination';
 import { orderFilterableFields } from './order.constant';
 
-// UPDATE CART
-const orderCheckIn: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const { ...payloadData } = req.body;
-
-    const result = await OrderServices.orderCheckIn(payloadData);
-
-    // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.CREATED,
-      success: true,
-      message: 'Order place successfully',
-      data: result,
-    });
-  },
-);
 // GET ALL ORDERS
 const getAllOrders: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -88,10 +72,7 @@ const orderChangeStatus: RequestHandler = catchAsync(
 
 //
 export const OrderControllers = {
-  orderCheckIn,
-  //   orderCheckOut,
   orderChangeStatus,
-  //   orderDelete,
   getAllOrders,
   getOrderByUserId,
 };

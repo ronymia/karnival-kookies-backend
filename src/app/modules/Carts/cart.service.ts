@@ -116,7 +116,7 @@ const cartCheckOut = async (payload: any) => {
     const order_id = orderResult.insertId; // Get last inserted order ID
 
     // Insert order items
-    const orderItemsValues = order_items.map((item) => [
+    const orderItemsValues = order_items.map((item: any) => [
       order_id,
       item.product_id,
       item.quantity,
@@ -161,8 +161,14 @@ const cartCheckOut = async (payload: any) => {
       ],
     );
 
-    // DELETE ITEMS FROM CART
-    await connection.query(`DELETE FROM carts WHERE user_id = ?`, [user_id]);
+    // DELETE ONLY CHECKED OUT ITEMS FROM CART
+    const productIds = order_items.map((item: any) => item.product_id);
+    if (productIds.length > 0) {
+      await connection.query(
+        `DELETE FROM carts WHERE user_id = ? AND product_id IN (?)`,
+        [user_id, productIds],
+      );
+    }
 
     // COMMIT TRANSACTION IF ALL QUERIES SUCCEED
     await connection.commit();

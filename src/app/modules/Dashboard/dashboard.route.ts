@@ -1,6 +1,5 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
 import { DashboardControllers } from './dashboard.controller';
 
 const router = express.Router();
@@ -24,14 +23,10 @@ const router = express.Router();
  *********************/
 
 //  GET ADMIN ROUTE
-router.get(
-  '/admin',
-  verifyToken,
-  verifyAdmin,
-  DashboardControllers.adminDashboard,
-);
+router.get('/', verifyToken, DashboardControllers.adminDashboard);
 
 // USER
 router.get('/user/:email', verifyToken, DashboardControllers.userDashboard);
+router.get('/:user_id', verifyToken, DashboardControllers.userDashboard);
 
 export const DashboardRoutes = router;

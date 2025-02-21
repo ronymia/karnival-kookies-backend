@@ -1,133 +1,101 @@
-import httpStatus from 'http-status';
-import AppError from '../../../errors/AppError';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
-import { IOrder, TOrderFilterableFields } from './order.interface';
-import { GenerateTrackingAndOrderId } from './order.utils';
-
-// ORDER CHECK IN
-const orderCheckIn = async (payload: IOrder): Promise<any> => {
-  const order_id = GenerateTrackingAndOrderId.generateOrderId();
-  const tracking_number = GenerateTrackingAndOrderId.generateTrackingNumber();
-
-  const {
-    user_id,
-    shipping_info,
-    payment_info,
-    order_items,
-    payment_method,
-    notes,
-    total_amount,
-  } = payload;
-
-  // Start a transaction
-  const connection = await pool.getConnection();
-  await connection.beginTransaction();
-
-  try {
-    // INSERT ORDER
-    const [orderResult] = (await connection.query(
-      `INSERT INTO orders (user_id, order_id, tracking_number, shipping_info, payment_info, payment_method, notes ) 
-      VALUES (?,?,?,?,?,?,?)`,
-      [
-        user_id,
-        order_id,
-        tracking_number,
-        JSON.stringify(shipping_info),
-        JSON.stringify(payment_info),
-        payment_method,
-        notes,
-      ],
-    )) as any[];
-
-    // INSERT ORDER PRODUCTS DETAILS
-    for (const item of order_items) {
-      await connection.query(
-        `INSERT INTO order_items (order_id, product_id, quantity, price) 
-        VALUES (?, ?, ?, ?)`,
-        [orderResult.insertId, item.product_id, item.quantity, total_amount],
-      );
-
-      // DELETE FROM CART
-      await connection.query(`DELETE FROM carts WHERE product_id=?`, [
-        item.product_id,
-      ]);
-    }
-
-    // COMMIT THE TRANSACTION IF BOTH INSERT
-    await connection.commit();
-
-    return {
-      order_id: orderResult.insertId,
-    };
-  } catch (error) {
-    // ROLLBACK TRANSACTION IN CASE GOT OF AN ERROR
-    await connection.rollback();
-
-    console.log({ error });
-    throw new AppError(httpStatus.BAD_REQUEST, 'Failed to place order');
-  } finally {
-    // Release the connection
-    connection.release();
-  }
-};
+import { TOrderFilterableFields } from './order.interface';
+import { RowDataPacket } from 'mysql2';
 
 // GET ALL ORDERS
 const getAllOrders = async (
   filters: Partial<Record<TOrderFilterableFields, any>>,
   paginationOptions: TPaginationOptions,
 ): Promise<any> => {
-  const { page, limit, offset } =
+  // GET PAGINATION AND SORTING INFO
+  const { page, limit, offset, sortBy, sortOrder } =
     paginationHelpers.calculatePagination(paginationOptions);
 
-  // Base query with aggregation
+  // BASE QUERY
   let query = `
-    SELECT 
-      o.*,
-      JSON_ARRAYAGG(
-        JSON_OBJECT(
-          'product_id', oi.product_id,
-          'quantity', oi.quantity,
-          'price', oi.price
-        )
-      ) AS order_items
-    FROM orders o
-    LEFT JOIN order_items oi ON o.id = oi.order_id
-    WHERE 1=1
-  `;
+              SELECT 
+                  o.*,
+
+                  -- Aggregating order items (Array of objects)
+                  IFNULL(
+                      JSON_ARRAYAGG(
+                          JSON_OBJECT(
+                              'product_id', oi.product_id,
+                              'quantity', oi.quantity,
+                              'price', oi.price,
+                              'product', JSON_OBJECT(
+                                  'id', p.id,
+                                  'name', p.name,
+                                  'images', p.images,
+                                  'category_id', p.category_id
+                              )
+                          )
+                      ), JSON_ARRAY()
+                  ) AS order_items,
+
+                  -- Using MAX() for shipping info (to avoid grouping by all columns)
+                  JSON_OBJECT(
+                      'recipient_name', MAX(si.recipient_name),
+                      'email', MAX(si.email),
+                      'apartment', MAX(si.apartment),
+                      'address', MAX(si.address),
+                      'city', MAX(si.city),
+                      'postal_code', MAX(si.postal_code),
+                      'state', MAX(si.state),
+                      'country', MAX(si.country),
+                      'phone', MAX(si.phone),
+                      'carrier', MAX(si.carrier),
+                      'delivery_instruction', MAX(si.delivery_instruction),
+                      'status', MAX(si.status),
+                      'estimated_delivery', MAX(si.estimated_delivery)
+                  ) AS shipping_info,
+
+                  -- Single Payment Object (Pick the first available payment per order)
+                  JSON_OBJECT(
+                      'id', MAX(pmt.id), -- Using MAX() to ensure a single row
+                      'transaction_id', MAX(pmt.transaction_id),
+                      'stripe_payment_intent_id', MAX(pmt.stripe_payment_intent_id),
+                      'stripe_payment_method_id', MAX(pmt.stripe_payment_method_id),
+                      'amount', MAX(pmt.amount),
+                      'method', MAX(pmt.method),
+                      'status', MAX(pmt.status)
+                  ) AS payment
+
+              FROM orders o
+              LEFT JOIN order_items oi ON o.id = oi.order_id
+              LEFT JOIN products p ON oi.product_id = p.id
+              LEFT JOIN shipping_info si ON o.id = si.order_id
+              LEFT JOIN payments pmt ON o.id = pmt.order_id
+              WHERE 1=1
+`;
+
+  // Construct WHERE conditions for filters
   const queryParams: any[] = [];
 
-  // Dynamically add filters
-  Object.entries(filters).forEach(([key, value]) => {
-    if (key === 'start_date' && filters.end_date) {
-      query += ` AND o.created_at BETWEEN ? AND ?`;
-      queryParams.push(filters.start_date, filters.end_date);
-    } else if (key !== 'end_date') {
-      query += ` AND o.${key} = ?`;
-      queryParams.push(value);
-    }
-  });
+  // **Apply Sorting**
+  if (sortBy) {
+    query += ` ORDER BY o.${sortBy} ${sortOrder}`;
+  }
 
+  // Add GROUP BY clause for proper aggregation
+  query += ` GROUP BY o.id`;
+
+  // **Apply Pagination**
   if (limit && page) {
-    // Add grouping and pagination
-    query += ` GROUP BY o.id LIMIT ? OFFSET ?`;
+    query += ` LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
   }
 
   // Execute the query
-  const [orders] = (await pool.query(query, queryParams)) as any[];
-
-  // Get total count for pagination metadata
-  const [totalCount] = (await pool.query(
-    `SELECT COUNT(*) AS count  FROM orders`,
-  )) as any[];
+  const [orders] = await pool.query<RowDataPacket[]>(query, queryParams);
 
   return {
     meta: {
       currentPage: page,
       limit,
-      total: totalCount[0]?.count,
+      total: orders.length,
     },
     data: orders,
   };
@@ -149,19 +117,61 @@ const getOrderByUserId = async (
 
   // Base query with aggregation
   let query = `
-    SELECT 
-      o.*,
-      JSON_ARRAYAGG(
-        JSON_OBJECT(
-          'product_id', oi.product_id,
-          'quantity', oi.quantity,
-          'price', oi.price
-        )
-      ) AS order_items
-    FROM orders o
-    LEFT JOIN order_items oi ON o.id = oi.order_id
-    WHERE 1=1
-  `;
+              SELECT 
+                  o.*,
+
+                  -- Aggregating order items (Array of objects)
+                  IFNULL(
+                      JSON_ARRAYAGG(
+                          JSON_OBJECT(
+                              'product_id', oi.product_id,
+                              'quantity', oi.quantity,
+                              'price', oi.price,
+                              'product', JSON_OBJECT(
+                                  'id', p.id,
+                                  'name', p.name,
+                                  'images', p.images,
+                                  'category_id', p.category_id
+                              )
+                          )
+                      ), JSON_ARRAY()
+                  ) AS order_items,
+
+                  -- Using MAX() for shipping info (to avoid grouping by all columns)
+                  JSON_OBJECT(
+                      'recipient_name', MAX(si.recipient_name),
+                      'email', MAX(si.email),
+                      'apartment', MAX(si.apartment),
+                      'address', MAX(si.address),
+                      'city', MAX(si.city),
+                      'postal_code', MAX(si.postal_code),
+                      'state', MAX(si.state),
+                      'country', MAX(si.country),
+                      'phone', MAX(si.phone),
+                      'carrier', MAX(si.carrier),
+                      'delivery_instruction', MAX(si.delivery_instruction),
+                      'status', MAX(si.status),
+                      'estimated_delivery', MAX(si.estimated_delivery)
+                  ) AS shipping_info,
+
+                  -- Single Payment Object (Pick the first available payment per order)
+                  JSON_OBJECT(
+                      'id', MAX(pmt.id), -- Using MAX() to ensure a single row
+                      'transaction_id', MAX(pmt.transaction_id),
+                      'stripe_payment_intent_id', MAX(pmt.stripe_payment_intent_id),
+                      'stripe_payment_method_id', MAX(pmt.stripe_payment_method_id),
+                      'amount', MAX(pmt.amount),
+                      'method', MAX(pmt.method),
+                      'status', MAX(pmt.status)
+                  ) AS payment
+
+              FROM orders o
+              LEFT JOIN order_items oi ON o.id = oi.order_id
+              LEFT JOIN products p ON oi.product_id = p.id
+              LEFT JOIN shipping_info si ON o.id = si.order_id
+              LEFT JOIN payments pmt ON o.id = pmt.order_id
+              WHERE 1=1
+`;
   const queryParams: any[] = [];
 
   // Apply user_id filter if provided
@@ -213,89 +223,6 @@ const getOrderByUserId = async (
   };
 };
 
-// const getAllOrders = async (
-//   filters: TOrderFilterableFields[],
-//   paginationOptions: TPaginationOptions,
-// ): Promise<any> => {
-//   const { page, limit, offset } =
-//     paginationHelpers.calculatePagination(paginationOptions);
-
-//   let query = `
-//     SELECT o.*, oi.product_id, oi.quantity, oi.price
-//     FROM orders o
-//     LEFT JOIN order_items oi ON o.order_id = oi.order_id
-//     WHERE 1=1
-//   `;
-//   const queryParams: any[] = [];
-
-//   // Add filters to query
-//   if (filters.status) {
-//     query += ' AND o.status = ?';
-//     queryParams.push(filters.status);
-//   }
-
-//   if (filters.user_id) {
-//     query += ' AND o.user_id = ?';
-//     queryParams.push(filters.user_id);
-//   }
-
-//   if (filters.startDate && filters.endDate) {
-//     query += ' AND o.created_at BETWEEN ? AND ?';
-//     queryParams.push(filters.startDate, filters.endDate);
-//   }
-
-//   // Apply pagination
-//   query += ' LIMIT ? OFFSET ?';
-//   queryParams.push(limit, offset);
-
-//   try {
-//     // Fetch orders with order items
-//     const [orders] = (await pool.query(query, queryParams)) as any;
-
-//     // Get total count for pagination
-//     const [[{ totalCount }]] = await pool.query(
-//       'SELECT COUNT(*) AS totalCount FROM orders o WHERE 1=1',
-//     );
-
-//     // Group order items by order_id and attach them to each order
-//     const ordersWithItems = orders.reduce((acc: any[], order: any) => {
-//       const { order_id, product_id, quantity, price, ...orderDetails } = order;
-
-//       // Find the existing order or create a new one in the accumulator
-//       let existingOrder = acc.find((item) => item.order_id === order_id);
-//       if (!existingOrder) {
-//         existingOrder = { ...orderDetails, order_items: [] };
-//         acc.push(existingOrder);
-//       }
-
-//       // Add the current item to the order's items array
-//       if (product_id) {
-//         existingOrder.order_items.push({
-//           product_id,
-//           quantity,
-//           price,
-//         });
-//       }
-
-//       return acc;
-//     }, []);
-
-//     // Return orders with order items and pagination data
-//     return {
-//       orders: ordersWithItems,
-//       pagination: {
-//         totalCount,
-//         totalPages: Math.ceil(totalCount / limit),
-//         currentPage: page,
-//         pageSize: limit,
-//       },
-//     };
-//   } catch (error) {
-//     console.error('Error fetching orders:', error);
-//     throw new Error('Failed to fetch orders');
-//   }
-// };
-
 // ORDER STATUS CHANGE
 const orderCheckOut = async () => {};
 const orderChangeStatus = async (id: number, payload: { status: string }) => {
@@ -310,7 +237,6 @@ const orderChangeStatus = async (id: number, payload: { status: string }) => {
 const orderDelete = async () => {};
 
 export const OrderServices = {
-  orderCheckIn,
   orderCheckOut,
   orderChangeStatus,
   orderDelete,

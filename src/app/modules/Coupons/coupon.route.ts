@@ -1,0 +1,57 @@
+import express from 'express';
+import verifyToken from '../../middlewares/verifyToken';
+import verifyAdmin from '../../middlewares/verifyAdmin';
+import validateRequest from '../../middlewares/validateRequest';
+import { CouponValidations } from './coupon.validation';
+import { CouponControllers } from './coupon.controller';
+
+const router = express.Router();
+
+/***************
+ * @api {post} /products
+ * @apiDescription create a new product
+ * @apiPermission  superAdmin , admin
+ *
+ * @apiHeader {string} => user's access token
+ * @apiHeaderExample {json} Header-Example:
+ *
+ * @apiQuery {page}   [page=1] => List pages
+ * @apiQuery {Number{1-100}}    [Limit=10] per page
+ *
+ *@apiSuccess {Object[]} Response=> data:product object
+ *
+ *@apiError {Unauthorized 401} => only authorized users can access this
+ *@apiError {forbidden 403} => only only can access this
+ *
+ *********************/
+
+//  CREATE
+router.post(
+  '/',
+  verifyToken,
+  // validateRequest(CouponValidations.createSchema),
+  CouponControllers.createCoupon,
+);
+// router.post(
+//   '/',
+//   verifyToken,
+//   verifyAdmin,
+//   validateRequest(CouponValidations.createSchema),
+//   CouponControllers.createCoupon,
+// );
+
+//  GET ALL
+router.get('/', verifyToken, CouponControllers.getAllCoupons);
+
+//  UPDATE
+router.put(
+  '/',
+  verifyToken,
+  // validateRequest(CouponValidations.updateSchema),
+  CouponControllers.updateCoupon,
+);
+
+// DELETE
+router.delete('/:id', verifyToken, verifyAdmin, CouponControllers.deleteCoupon);
+
+export const CouponRoutes = router;

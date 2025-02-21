@@ -23,11 +23,12 @@ const router = express.Router();
  *
  *********************/
 
-// INSERT ORDER INTO DB
-router.post('/check-in', verifyToken, OrderControllers.orderCheckIn);
+// // INSERT ORDER INTO DB
+// router.post('/check-in', verifyToken, OrderControllers.orderCheckIn);
 
-// ORDER GET ALL ORDERS
+// ORDER GET ALL ORDERS FOR USER
 router.get('/', verifyToken, OrderControllers.getAllOrders);
+
 // ORDER GET BY USER ID
 router.get('/:user_id', verifyToken, OrderControllers.getOrderByUserId);
 

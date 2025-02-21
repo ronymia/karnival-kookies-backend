@@ -15,6 +15,7 @@ import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
 import { FavoriteProductRoutes } from '../modules/FavoriteProduct/favoriteProduct.route';
 import { OrderRoutes } from '../modules/Orders/order.route';
 import { MetaDataRoutes } from '../modules/MetaData/metaData.route';
+import { CouponRoutes } from '../modules/Coupons/coupon.route';
 
 const router = express.Router();
 
@@ -64,8 +65,8 @@ const moduleRoutes = [
     route: FaqRoutes,
   },
   {
-    path: '/v1.0/discounts',
-    route: DiscountRoutes,
+    path: '/v1.0/coupons',
+    route: CouponRoutes,
   },
   {
     path: '/v1.0/ratings',
@@ -80,11 +81,11 @@ const moduleRoutes = [
     route: SubscribersRoutes,
   },
   {
-    path: '/v1.0/favorite1.0',
+    path: '/v1.0/favorite',
     route: FavoriteProductRoutes,
   },
   {
-    path: '/v1.0/meta1.0',
+    path: '/v1.0/meta',
     route: MetaDataRoutes,
   },
 ];
