@@ -10,9 +10,9 @@ import { paginationFields } from '../../../constants/pagination';
 // CREATE
 const createSubscribers: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const { ...createData } = req.body;
+    const { ...payloadData } = req.body;
 
-    const result = await SubscriberServices.createSubscribers(createData);
+    const result = await SubscriberServices.createSubscribers(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -40,7 +40,8 @@ const getAllSubscribers: RequestHandler = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: 'Subscribers fetch successfully',
-      data: result,
+      meta: result?.meta,
+      data: result?.data,
     });
   },
 );

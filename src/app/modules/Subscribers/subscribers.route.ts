@@ -2,6 +2,7 @@ import express from 'express';
 import { SubscribersControllers } from './subscribers.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import { SubscribersValidations } from './subscribers.validation';
+import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
@@ -31,6 +32,10 @@ router.post(
 );
 
 //  GET ALL
-router.get('/', SubscribersControllers.getAllSubscribers);
+router.get(
+  '/',
+  auth('admin', 'superAdmin'),
+  SubscribersControllers.getAllSubscribers,
+);
 
 export const SubscribersRoutes = router;
