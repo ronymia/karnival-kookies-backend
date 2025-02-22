@@ -51,7 +51,8 @@ const getAllCoupons: RequestHandler = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: 'Coupon data fetch successfully',
-      data: result,
+      meta: result.meta,
+      data: result.data,
     });
   },
 );
