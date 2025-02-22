@@ -40,7 +40,7 @@ const createRating = async (payload: any) => {
 // GET ALL
 const getAllRatings = async (id: any) => {
   //
-  const [reviews] = await pool.quer<RowDataPacket[]>(
+  const [reviews] = await pool.query<RowDataPacket[]>(
     'SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC',
     [parseInt(id)],
   );
