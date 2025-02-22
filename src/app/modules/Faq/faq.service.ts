@@ -46,7 +46,7 @@ const updateFaq = async (payload: any) => {
   const { id, question, answer } = payload;
 
   const result = await pool.query<ResultSetHeader>(
-    'UPDATE faq SET question = ?, answer = ? WHERE id = ?',
+    'UPDATE faqs SET question = ?, answer = ? WHERE id = ?',
     [question, answer, id],
   );
 
@@ -56,7 +56,7 @@ const updateFaq = async (payload: any) => {
 //DELETE
 const deleteFaq = async (id: number) => {
   const result = await pool.query<ResultSetHeader>(
-    'DELETE FROM faq WHERE id = ?',
+    'DELETE FROM faqs WHERE id = ?',
     [Number(id)],
   );
   return result;

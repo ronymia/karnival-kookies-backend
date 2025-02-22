@@ -92,6 +92,7 @@ const getAccessToken: RequestHandler = catchAsync(
     });
   },
 );
+
 // REFRESH TOKEN
 const refreshToken: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
@@ -99,14 +100,7 @@ const refreshToken: RequestHandler = catchAsync(
 
     const result = await AuthServices.refreshToken(refresh_token);
 
-    // SET REFRESH TOKEN TO COOKIE
-    const cookieOptions: CookieOptions = {
-      secure: config.node_env === 'product',
-      httpOnly: true,
-    };
-    res.cookie('refresh_token', result, cookieOptions);
-
-    //
+    // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -128,14 +122,7 @@ const resetPassword: RequestHandler = catchAsync(
 
     const result = await AuthServices.resetPassword(payloadData);
 
-    // SET REFRESH TOKEN TO COOKIE
-    // const cookieOptions = {
-    //   secure: config.node_env === 'product',
-    //   httpOnly: true,
-    // };
-    // res.cookie('refresh_token', result, cookieOptions);
-
-    //
+    // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,

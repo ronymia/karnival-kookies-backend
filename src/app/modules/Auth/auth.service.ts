@@ -305,23 +305,21 @@ const refreshToken = async (token: string) => {
     }
   }
 
-  const { userEmail } = verifiedToken;
+  const { user_id } = verifiedToken;
 
-  const [rows] = (await pool.query('SELECT * FROM users WHERE email = ?', [
-    userEmail,
-  ])) as any[];
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM users WHERE user_id = ?',
+    [user_id],
+  );
 
-  const isUserExist = rows[0];
-  if (!isUserExist) {
+  const user = rows[0];
+  if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, ' User not found');
   }
-  //generate new token
 
+  //generate new token
   const newAccessToken = JwtHelpers.createToken(
-    {
-      userEmail: isUserExist.email,
-      role: isUserExist.role,
-    },
+    { id: user?.id, email: user?.email, role: user?.role },
     config.jwt.access_token as Secret,
     config.jwt.access_token_expires_in as string,
   );

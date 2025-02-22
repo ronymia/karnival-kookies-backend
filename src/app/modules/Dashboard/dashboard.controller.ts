@@ -12,14 +12,13 @@ const adminDashboard: RequestHandler = catchAsync(
 
     const result = await DashboardServices.adminDashboard();
 
-    res.json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'Admin Dashboard Data fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Admin Dashboard Data fetch successfully',
+      data: result,
+    });
   },
 );
 

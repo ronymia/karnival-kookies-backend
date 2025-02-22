@@ -1,3 +1,4 @@
+import { ResultSetHeader } from 'mysql2';
 import { pool } from '../../../shared/mySQL';
 import { IFavoriteProduct } from './favoriteProduct.interface';
 
@@ -9,10 +10,10 @@ const addFavoriteProduct = async (
   const { user_id, product_id } = payload;
 
   // ADD INTO DATABASE
-  const [result] = (await pool.query(
+  const [result] = await pool.query<ResultSetHeader>(
     `INSERT INTO favorite_products (user_id, product_id) VALUES (?, ?)`,
     [user_id, product_id],
-  )) as any;
+  );
 
   return {
     id: result?.insertId,
@@ -28,7 +29,7 @@ const removeFavoriteProduct = async (
   const { user_id, product_id } = payload;
 
   // DELETE FROM DATABASE
-  const result = await pool.query(
+  const result = await pool.query<ResultSetHeader>(
     `DELETE FROM favorite_products WHERE user_id = ? AND product_id = ?`,
     [user_id, product_id],
   );

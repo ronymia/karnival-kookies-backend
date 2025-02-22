@@ -51,9 +51,10 @@ const getAllCategories = async (
   return {
     meta: {
       total: totalCategoriesResult[0].count || 0,
-      page: page || 1, // Default to page 1 if not provided
-      limit: limit || totalCategoriesResult[0].count, // Default to total count if not provided
-      total_page: Math.ceil(totalCategoriesResult[0].count / limit!),
+      current_page: page,
+      limit,
+      total_page:
+        Math.ceil(totalCategoriesResult[0].count / limit! || 0) || null,
     },
     data: categories,
   };
