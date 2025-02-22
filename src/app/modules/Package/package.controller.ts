@@ -97,6 +97,8 @@ const deletePackage: RequestHandler = catchAsync(
         `No valid IDs provided. ${ids}`,
       );
     }
+
+    // GET RESULT FROM SERVICE
     const result = await PackageServices.deletePackage(parsedIds);
 
     // SEND RESPONSE

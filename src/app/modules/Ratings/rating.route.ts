@@ -1,9 +1,6 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
-import validateRequest from '../../middlewares/validateRequest';
 import { RatingControllers } from './rating.controller';
-import { RatingValidations } from './rating.validation';
 
 const router = express.Router();
 
@@ -45,6 +42,6 @@ router.put(
 );
 
 // DELETE
-router.delete('/:id', verifyToken, RatingControllers.deleteRating);
+router.delete('/:ids', verifyToken, RatingControllers.deleteRating);
 
 export const RatingRoutes = router;
