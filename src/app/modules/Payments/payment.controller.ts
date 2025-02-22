@@ -7,15 +7,14 @@ import { PaymentServices } from './payment.service';
 // STRIPE CONFIG
 const stripeConfig: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const { ...cartData } = req.body;
-
+    // GET RESULT FROM SERVICE
     const result = await PaymentServices.stripeConfig();
 
     // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: 'Stripe Config Updated successfully',
+      message: 'Stripe publishableKey fetch successfully',
       data: result,
     });
   },
@@ -26,6 +25,7 @@ const paymentIntent: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { ...payloadData } = req.body;
 
+    // GET RESULT FROM SERVICE
     const result = await PaymentServices.paymentIntent(payloadData);
 
     // SEND RESPONSE

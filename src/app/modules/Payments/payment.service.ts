@@ -10,13 +10,17 @@ const stripeConfig = async () => {
 
 // PAYMENT INTENT
 const paymentIntent = async (payload: { price: number }) => {
+  //
   const { price } = payload;
-  const amount = Number(price) * 100;
-  if (!amount) {
+
+  // IF PRICE IS EMPTY
+  if (!price) {
     return;
   }
+
+  // CREATE PAYMENT INTENT
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: amount,
+    amount: price,
     currency: PAYMENT_CURRENCY.USD,
     payment_method_types: [PAYMENT_METHOD.CARD],
     // automatic_payment_methods: {
