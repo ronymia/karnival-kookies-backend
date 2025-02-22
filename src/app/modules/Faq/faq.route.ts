@@ -1,6 +1,5 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
 import validateRequest from '../../middlewares/validateRequest';
 import { FaqValidations } from './faq.validation';
 import { FaqControllers } from './faq.controller';
@@ -29,7 +28,6 @@ const router = express.Router();
 router.post(
   '/',
   verifyToken,
-  verifyAdmin,
   validateRequest(FaqValidations.createSchema),
   FaqControllers.createFaq,
 );
@@ -41,12 +39,11 @@ router.get('/', FaqControllers.getAllFaq);
 router.put(
   '/',
   verifyToken,
-  verifyAdmin,
   validateRequest(FaqValidations.updateSchema),
   FaqControllers.updateFaq,
 );
 
 // DELETE
-router.delete('/:id', verifyToken, verifyAdmin, FaqControllers.deleteFaq);
+router.delete('/:id', verifyToken, FaqControllers.deleteFaq);
 
 export const FaqRoutes = router;

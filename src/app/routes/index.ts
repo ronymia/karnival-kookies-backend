@@ -5,10 +5,8 @@ import { DashboardRoutes } from '../modules/Dashboard/dashboard.route';
 import { CartRoutes } from '../modules/Carts/cart.route';
 import { PaymentRoutes } from '../modules/Payments/payment.route';
 import { CategoryRoutes } from '../modules/Categories/categories.route';
-import { DiscountRoutes } from '../modules/Discounts/discount.route';
 import { FaqRoutes } from '../modules/Faq/faq.route';
 import { RatingRoutes } from '../modules/Ratings/rating.route';
-import { MessageRoutes } from '../modules/Messages/message.route';
 import { ProductRoutes } from '../modules/Products/product.route';
 import { PackageRoutes } from '../modules/Package/package.route';
 import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
@@ -55,10 +53,6 @@ const moduleRoutes = [
   {
     path: '/v1.0/categories',
     route: CategoryRoutes,
-  },
-  {
-    path: '/v1.0/messages',
-    route: MessageRoutes,
   },
   {
     path: '/v1.0/faqs',

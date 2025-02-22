@@ -7,11 +7,9 @@ import { FaqServices } from './faq.service';
 // CREATE
 const createFaq: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { ...createData } = req.body;
+    const { ...payloadData } = req.body;
 
-    const result = await FaqServices.createFaq(createData);
+    const result = await FaqServices.createFaq(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -30,25 +28,23 @@ const getAllFaq: RequestHandler = catchAsync(
     // const paginationOptions = pick(req.query, paginationFields);
 
     const result = await FaqServices.getAllFaq();
-    res.status(httpStatus.OK).json(result);
     // SEND RESPONSE
-    // sendResponse<any>(res, {
-    //   statusCode: httpStatus.OK,
-    //   success: true,
-    //   message: 'FAQ fetch successfully',
-    //   data: result,
-    // });
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'FAQ fetch successfully',
+      meta: result?.meta,
+      data: result?.data,
+    });
   },
 );
 
 // UPDATE
 const updateFaq: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, faqFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { ...updateData } = req.body;
+    const { ...payloadData } = req.body;
 
-    const result = await FaqServices.updateFaq(updateData);
+    const result = await FaqServices.updateFaq(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {

@@ -1,6 +1,5 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
 import { MetaDataControllers } from './metaData.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import { MetaDataValidations } from './metaData.validation';
@@ -29,7 +28,6 @@ const router = express.Router();
 router.post(
   '/',
   verifyToken,
-  verifyAdmin,
   validateRequest(MetaDataValidations.createSchema),
   MetaDataControllers.createMetaData,
 );
@@ -44,17 +42,11 @@ router.get('/:id', MetaDataControllers.getMetaDataById);
 router.patch(
   '/',
   verifyToken,
-  verifyAdmin,
   validateRequest(MetaDataValidations.createSchema),
   MetaDataControllers.updateMetaData,
 );
 
 // DELETE META DATA
-router.delete(
-  '/:ids',
-  verifyToken,
-  verifyAdmin,
-  MetaDataControllers.deleteMetaData,
-);
+router.delete('/:ids', verifyToken, MetaDataControllers.deleteMetaData);
 
 export const MetaDataRoutes = router;

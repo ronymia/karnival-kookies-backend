@@ -8,8 +8,6 @@ import AppError from '../../../errors/AppError';
 // CREATE META DATA
 const createMetaData: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, productFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
     const { ...payloadData } = req.body;
 
     const result = await MetaDataServices.createMetaData(payloadData);
@@ -29,7 +27,6 @@ const getAllMetaData: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     // const filters = pick(req.query, packageFilterableFields);
     // const paginationOptions = pick(req.query, paginationFields);
-    // const { url } = req.query;
     const url = req.query.url as string | undefined;
 
     if (url && typeof url !== 'string') {

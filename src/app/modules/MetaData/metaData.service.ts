@@ -1,4 +1,4 @@
-import { ResultSetHeader } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../../../shared/mySQL';
 
 // CREATE META DATA
@@ -6,10 +6,10 @@ const createMetaData = async (payload: any): Promise<any> => {
   const { url, title, description } = payload;
 
   // Correct SQL query with no trailing commas
-  const [result] = (await pool.query<ResultSetHeader>(
+  const [result] = await pool.query<ResultSetHeader>(
     'INSERT INTO meta_data (url,title, description) VALUES (?, ?, ?)',
     [title, description],
-  )) as any[];
+  );
 
   return {
     id: result?.insertId,
@@ -32,12 +32,12 @@ const getAllMetaData = async (url: any): Promise<any> => {
   }
 
   // Execute the main query
-  const [metadata] = await pool.query(query, params);
+  const [metadata] = await pool.query<RowDataPacket[]>(query, params);
 
   // Get the total count of meta_data entries
-  const [totalMetaDataResult] = (await pool.query(
+  const [totalMetaDataResult] = await pool.query<RowDataPacket[]>(
     'SELECT COUNT(*) as count FROM meta_data',
-  )) as any[];
+  );
   const totalMetaData = totalMetaDataResult[0].count;
 
   return {
@@ -50,9 +50,10 @@ const getAllMetaData = async (url: any): Promise<any> => {
 
 //  GET META DATA BY ID
 const getMetaDataById = async (id: number): Promise<any> => {
-  const [result] = await pool.query('SELECT * FROM meta_data WHERE id = ?', [
-    Number(id),
-  ]);
+  const [result] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM meta_data WHERE id = ?',
+    [Number(id)],
+  );
 
   return result;
 };
@@ -61,10 +62,10 @@ const getMetaDataById = async (id: number): Promise<any> => {
 const updateMetaData = async (payload: any): Promise<any> => {
   const { id, url, title, description } = payload;
   // Update
-  const [result] = (await pool.query(
+  const [result] = await pool.query<ResultSetHeader[]>(
     'UPDATE meta_data SET url=?, title = ?, description = ? WHERE id = ?',
     [url, title, description, id],
-  )) as any[];
+  );
 
   return result;
 };
@@ -78,7 +79,7 @@ const deleteMetaData = async (ids: number[]): Promise<any> => {
   const query = `DELETE FROM meta_data WHERE id IN (${placeholders})`;
 
   // EXECUTE QUERY
-  const [result] = await pool.query(query, ids);
+  const [result] = await pool.query<ResultSetHeader>(query, ids);
 
   return result;
 };
