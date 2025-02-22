@@ -1,6 +1,5 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
 import { OrderControllers } from './order.controller';
 
 const router = express.Router();
@@ -23,9 +22,6 @@ const router = express.Router();
  *
  *********************/
 
-// // INSERT ORDER INTO DB
-// router.post('/check-in', verifyToken, OrderControllers.orderCheckIn);
-
 // ORDER GET ALL ORDERS FOR USER
 router.get('/', verifyToken, OrderControllers.getAllOrders);
 
@@ -36,7 +32,6 @@ router.get('/:user_id', verifyToken, OrderControllers.getOrderByUserId);
 router.put(
   '/change-status/:id',
   verifyToken,
-  verifyAdmin,
   OrderControllers.orderChangeStatus,
 );
 

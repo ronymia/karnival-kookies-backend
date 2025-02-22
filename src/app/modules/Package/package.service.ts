@@ -77,10 +77,10 @@ const getAllPackages = async (
 
   return {
     meta: {
-      total: totalPackagesResult[0].count,
-      page: page || 1,
-      limit: limit || totalPackagesResult[0].count,
-      total_page: Math.ceil(totalPackagesResult[0].count / limit! || 0),
+      current_page: page,
+      limit,
+      total: totalPackagesResult[0]?.count,
+      total_page: Math.ceil(totalPackagesResult[0]?.count / limit! || 0),
     },
     data: result,
   };

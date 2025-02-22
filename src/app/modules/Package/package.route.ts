@@ -1,8 +1,6 @@
 import express from 'express';
 import { PackageControllers } from './package.controller';
 import dynamicFileUpload from '../../middlewares/uploadFiles';
-import validateRequest from '../../middlewares/validateRequest';
-import { PackageValidations } from './package.validation';
 import auth from '../../middlewares/auth';
 
 const router = express.Router();

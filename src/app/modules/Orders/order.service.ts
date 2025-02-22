@@ -1,12 +1,12 @@
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { pool } from '../../../shared/mySQL';
-import { TOrderFilterableFields } from './order.interface';
+import { TOrderFilter } from './order.interface';
 import { RowDataPacket } from 'mysql2';
 
 // GET ALL ORDERS
 const getAllOrders = async (
-  filters: Partial<Record<TOrderFilterableFields, any>>,
+  filters: TOrderFilter,
   paginationOptions: TPaginationOptions,
 ): Promise<any> => {
   // GET PAGINATION AND SORTING INFO
@@ -71,18 +71,46 @@ const getAllOrders = async (
               WHERE 1=1
 `;
 
-  // Construct WHERE conditions for filters
-  const queryParams: any[] = [];
+  // **Date Filtering**
+  if (filters?.date_filter) {
+    switch (filters.date_filter) {
+      case 'today':
+        query += ` AND DATE(o.created_at) = CURDATE()`;
+        break;
+      case 'this_week':
+        query += ` AND YEARWEEK(o.created_at, 1) = YEARWEEK(NOW(), 1)`;
+        break;
+      case 'last_week':
+        query += ` AND YEARWEEK(o.created_at, 1) = YEARWEEK(NOW(), 1) - 1`;
+        break;
+      case 'this_month':
+        query += ` AND MONTH(o.created_at) = MONTH(NOW()) AND YEAR(o.created_at) = YEAR(NOW())`;
+        break;
+      case 'last_month':
+        query += ` AND MONTH(o.created_at) = MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH)) 
+                   AND YEAR(o.created_at) = YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH))`;
+        break;
+      case 'this_year':
+        query += ` AND YEAR(o.created_at) = YEAR(NOW())`;
+        break;
+      case 'last_year':
+        query += ` AND YEAR(o.created_at) = YEAR(DATE_SUB(NOW(), INTERVAL 1 YEAR))`;
+        break;
+      default:
+        break;
+    }
+  }
+
+  // **Add GROUP BY clause for proper aggregation**
+  query += ` GROUP BY o.id`;
 
   // **Apply Sorting**
   if (sortBy) {
     query += ` ORDER BY o.${sortBy} ${sortOrder}`;
   }
 
-  // Add GROUP BY clause for proper aggregation
-  query += ` GROUP BY o.id`;
-
   // **Apply Pagination**
+  const queryParams: any[] = [];
   if (limit && page) {
     query += ` LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
@@ -93,9 +121,10 @@ const getAllOrders = async (
 
   return {
     meta: {
-      currentPage: page,
+      current_page: page,
       limit,
       total: orders.length,
+      total_pages: Math.ceil(orders.length / limit! || 0) || null,
     },
     data: orders,
   };
@@ -180,11 +209,13 @@ const getOrderByUserId = async (
     queryParams.push(user_id);
   }
 
-  // Add GROUP BY clause for proper aggregation
+  // **Add GROUP BY clause for proper aggregation**
   query += ` GROUP BY o.id`;
 
-  // Apply sorting
-  query += ` ORDER BY ${sortBy} ${sortOrder}`;
+  // **Apply Sorting**
+  if (sortBy) {
+    query += ` ORDER BY o.${sortBy} ${sortOrder}`;
+  }
 
   // Add pagination limits
   if (limit && page) {
@@ -224,7 +255,6 @@ const getOrderByUserId = async (
 };
 
 // ORDER STATUS CHANGE
-const orderCheckOut = async () => {};
 const orderChangeStatus = async (id: number, payload: { status: string }) => {
   const { status } = payload;
   const result = await pool.query('UPDATE orders SET status = ? WHERE id = ?', [
@@ -237,7 +267,6 @@ const orderChangeStatus = async (id: number, payload: { status: string }) => {
 const orderDelete = async () => {};
 
 export const OrderServices = {
-  orderCheckOut,
   orderChangeStatus,
   orderDelete,
   getAllOrders,
