@@ -4,6 +4,9 @@ import catchAsync from '../../../shared/catchAsync';
 import { MetaDataServices } from './metaData.service';
 import sendResponse from '../../../shared/sendResponse';
 import AppError from '../../../errors/AppError';
+import pick from '../../../shared/pick';
+import { metaDataFilterableFields } from './metaData.constant';
+import { paginationFields } from '../../../constants/pagination';
 
 // CREATE META DATA
 const createMetaData: RequestHandler = catchAsync(
@@ -25,15 +28,13 @@ const createMetaData: RequestHandler = catchAsync(
 // GET ALL META DATA
 const getAllMetaData: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, packageFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const url = req.query.url as string | undefined;
+    const filters = pick(req.query, metaDataFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
 
-    if (url && typeof url !== 'string') {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid URL parameter');
-    }
-
-    const result = await MetaDataServices.getAllMetaData(url);
+    const result = await MetaDataServices.getAllMetaData(
+      filters,
+      paginationOptions,
+    );
 
     // SEND RESPONSE
     sendResponse<any>(res, {

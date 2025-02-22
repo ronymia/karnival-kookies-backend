@@ -79,7 +79,7 @@ const moduleRoutes = [
     route: FavoriteProductRoutes,
   },
   {
-    path: '/v1.0/meta',
+    path: '/v1.0/meta-data',
     route: MetaDataRoutes,
   },
 ];

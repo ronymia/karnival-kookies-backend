@@ -1,48 +1,81 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../../../shared/mySQL';
+import { IMetaDataFilterableFields } from './metaData.interface';
+import { TPaginationOptions } from '../../../interfaces/pagination';
+import { paginationHelpers } from '../../../helpers/paginationHelpers';
 
 // CREATE META DATA
 const createMetaData = async (payload: any): Promise<any> => {
-  const { url, title, description } = payload;
+  // DESTRUCTURE
+  const { meta_key, title, description } = payload;
 
-  // Correct SQL query with no trailing commas
+  // INSERT INTO DB
   const [result] = await pool.query<ResultSetHeader>(
-    'INSERT INTO meta_data (url,title, description) VALUES (?, ?, ?)',
-    [title, description],
+    'INSERT INTO meta_data (meta_key, title, description) VALUES (?, ?, ? )',
+    [meta_key, title, description],
   );
 
+  // SEND TO CONTROLLER
   return {
     id: result?.insertId,
-    url,
+    meta_key,
     title,
     description,
   };
 };
 
 // GET ALL META DATA
-const getAllMetaData = async (url: any): Promise<any> => {
-  // Initialize the query and parameters
-  let query = `SELECT * FROM meta_data`;
-  const params: any[] = [];
+const getAllMetaData = async (
+  filters: IMetaDataFilterableFields,
+  paginationOptions: TPaginationOptions,
+): Promise<any> => {
+  // DESTRUCTURE
+  const { page, limit, offset, sortBy, sortOrder } =
+    paginationHelpers.calculatePagination(paginationOptions);
 
-  // Add a WHERE clause if a URL is provided
-  if (url) {
-    query += ` WHERE url = ?`;
-    params.push(url);
+  // GENERATE QUERY
+  let query = `SELECT * FROM meta_data `;
+
+  // GENERATE WHERE QUERY
+  let whereQuery = '';
+  if (Object.keys(filters).length > 0) {
+    whereQuery = Object.keys(filters)
+      .map((key) => `${key} = ?`)
+      .join(' AND ');
   }
 
-  // Execute the main query
-  const [metadata] = await pool.query<RowDataPacket[]>(query, params);
+  if (whereQuery) {
+    query += ` WHERE ${whereQuery}`;
+  }
+
+  // SORT QUERY
+  if (sortBy && sortOrder) {
+    query += ` ORDER BY ${sortBy} ${sortOrder}`;
+  }
+
+  // LIMIT QUERY
+  if (limit && page) {
+    query += ` LIMIT ${limit} OFFSET ${offset}`;
+  }
+
+  // EXECUTE THE QUERY
+  const [metadata] = await pool.query<RowDataPacket[]>(query, [
+    ...Object.values(filters),
+  ]);
 
   // Get the total count of meta_data entries
   const [totalMetaDataResult] = await pool.query<RowDataPacket[]>(
     'SELECT COUNT(*) as count FROM meta_data',
   );
-  const totalMetaData = totalMetaDataResult[0].count;
 
+  // SEND TO CONTROLLER
   return {
     meta: {
-      total: totalMetaData,
+      current_page: page,
+      limit,
+      total_pages:
+        Math.ceil(totalMetaDataResult[0]?.count / limit! || 0) || null,
+      total: totalMetaDataResult[0]?.count,
     },
     data: metadata,
   };
@@ -60,11 +93,11 @@ const getMetaDataById = async (id: number): Promise<any> => {
 
 // UPDATE META DATA
 const updateMetaData = async (payload: any): Promise<any> => {
-  const { id, url, title, description } = payload;
+  const { id, meta_key, title, description } = payload;
   // Update
   const [result] = await pool.query<ResultSetHeader[]>(
-    'UPDATE meta_data SET url=?, title = ?, description = ? WHERE id = ?',
-    [url, title, description, id],
+    'UPDATE meta_data SET meta_key=?, title = ?, description = ? WHERE id = ?',
+    [meta_key, title, description, id],
   );
 
   return result;
