@@ -3,6 +3,9 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import httpStatus from 'http-status';
 import { FaqServices } from './faq.service';
+import { faqFilterableFields } from './faq.constant';
+import { paginationFields } from '../../../constants/pagination';
+import pick from '../../../shared/pick';
 
 // CREATE
 const createFaq: RequestHandler = catchAsync(
@@ -13,7 +16,7 @@ const createFaq: RequestHandler = catchAsync(
 
     // SEND RESPONSE
     sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
+      statusCode: httpStatus.CREATED,
       success: true,
       message: 'FAQ Created successfully',
       data: result,
@@ -24,10 +27,10 @@ const createFaq: RequestHandler = catchAsync(
 // GET ALL FAQ
 const getAllFaq: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, faqFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
+    const filters = pick(req.query, faqFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
 
-    const result = await FaqServices.getAllFaq();
+    const result = await FaqServices.getAllFaq(filters, paginationOptions);
     // SEND RESPONSE
     sendResponse<any>(res, {
       statusCode: httpStatus.OK,
