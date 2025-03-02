@@ -42,7 +42,7 @@ const getAllReviews: RequestHandler = catchAsync(
       success: true,
       message: 'Rating fetch successfully',
       meta: result.meta,
-      data: result.data,
+      data: { data: result.data, star: result.star },
     });
   },
 );
