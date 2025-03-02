@@ -98,11 +98,37 @@ const getAllReviews = async (
     ...Object.values(filters),
   ]);
 
-  // Get the total count of meta_data entries
+  // BUILD QUERY COUNT
+  const countQuery = 'SELECT COUNT(*) as count FROM reviews';
+  const countQueryParams: any[] = []; // QUERY COUNT PARAMS
+  // IF PRODUCT ID EXIST
+  if (filters?.product_id) {
+    query += `WHERE product_id = ?`;
+    countQueryParams.push(filters?.product_id);
+  }
+  // EXECUTE THE QUERY COUNT
   const [totalResult] = await pool.query<RowDataPacket[]>(
-    'SELECT COUNT(*) as count FROM reviews',
+    countQuery,
+    countQueryParams,
   );
 
+  // RATING COUNT
+  const ratingsCount: Record<string, number> = {
+    star_5: 0,
+    star_4: 0,
+    star_3: 0,
+    star_2: 0,
+    star_1: 0,
+  };
+  // forEach LOOP THROUGH GET RATING COUNT
+  result.forEach((review) => {
+    const ratingKey = `star_${review.rating}`;
+    if (ratingsCount[ratingKey] !== undefined) {
+      ratingsCount[ratingKey]++;
+    }
+  });
+
+  // SEND TO THE CONTROLLER
   return {
     meta: {
       current_page: page,
@@ -111,6 +137,7 @@ const getAllReviews = async (
       total: totalResult[0]?.count,
     },
     data: result,
+    star: ratingsCount,
   };
 };
 
