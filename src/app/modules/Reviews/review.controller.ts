@@ -46,6 +46,22 @@ const getAllReviews: RequestHandler = catchAsync(
     });
   },
 );
+// GET ALL
+const getReviewById: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const result = await RatingServices.getReviewById(Number(id));
+
+    // SEND RESPONSE
+    sendResponse<any>(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Rating fetch successfully',
+      data: result,
+    });
+  },
+);
 
 // UPDATE
 const updateReview: RequestHandler = catchAsync(
@@ -96,6 +112,7 @@ const deleteReview: RequestHandler = catchAsync(
 export const RatingControllers = {
   createReview,
   getAllReviews,
+  getReviewById,
   updateReview,
   deleteReview,
 };

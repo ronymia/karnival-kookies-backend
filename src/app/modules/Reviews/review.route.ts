@@ -31,7 +31,10 @@ router.post(
 );
 
 //  GET ALL
-router.get('/:id', RatingControllers.getAllReviews);
+router.get('/', RatingControllers.getAllReviews);
+
+//  GET BY ID
+router.get('/:id', RatingControllers.getReviewById);
 
 //  UPDATE
 router.patch(

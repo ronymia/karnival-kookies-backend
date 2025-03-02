@@ -103,6 +103,18 @@ const getAllReviews = async (
   };
 };
 
+// GET REVIEW BY ID
+const getReviewById = async (id: number) => {
+  // BUILD QUERY
+  const query = `SELECT * FROM reviews WHERE id = ?`;
+
+  // EXECUTE QUERY
+  const [result] = await pool.query(query, id);
+
+  return result;
+};
+
+// UPDATE REVIEW
 const updateReview = async (payload: any) => {
   const { id, product_id, user_id, rating, comment } = payload;
 
@@ -160,6 +172,7 @@ const deleteReview = async (ids: number[]) => {
 export const RatingServices = {
   createReview,
   getAllReviews,
+  getReviewById,
   updateReview,
   deleteReview,
 };
