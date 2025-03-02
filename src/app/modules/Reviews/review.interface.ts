@@ -1,3 +1,3 @@
 export interface IReviewFilters {
-  product_id: string;
+  product_id?: string;
 }
