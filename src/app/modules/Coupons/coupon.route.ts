@@ -1,8 +1,5 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import verifyAdmin from '../../middlewares/verifyAdmin';
-import validateRequest from '../../middlewares/validateRequest';
-import { CouponValidations } from './coupon.validation';
 import { CouponControllers } from './coupon.controller';
 
 const router = express.Router();
@@ -25,26 +22,22 @@ const router = express.Router();
  *
  *********************/
 
-//  CREATE
+// CREATE
 router.post(
   '/',
   verifyToken,
   // validateRequest(CouponValidations.createSchema),
   CouponControllers.createCoupon,
 );
-// router.post(
-//   '/',
-//   verifyToken,
-//   verifyAdmin,
-//   validateRequest(CouponValidations.createSchema),
-//   CouponControllers.createCoupon,
-// );
 
-//  GET ALL
+// GET ALL
 router.get('/', verifyToken, CouponControllers.getAllCoupons);
 
-//  UPDATE
-router.put(
+//  GET SINGLE CODE
+router.get('/:id', verifyToken, CouponControllers.getCouponCodeById);
+
+// UPDATE
+router.patch(
   '/',
   verifyToken,
   // validateRequest(CouponValidations.updateSchema),
@@ -52,6 +45,6 @@ router.put(
 );
 
 // DELETE
-router.delete('/:id', verifyToken, verifyAdmin, CouponControllers.deleteCoupon);
+router.delete('/:ids', verifyToken, CouponControllers.deleteCoupon);
 
 export const CouponRoutes = router;

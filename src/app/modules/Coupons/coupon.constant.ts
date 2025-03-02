@@ -1,1 +1,1 @@
-export const discountFilterableFields = [];
+export const CouponFilterableFields = [];
