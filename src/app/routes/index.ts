@@ -1,19 +1,19 @@
 import express from 'express';
 import { AuthRoutes } from '../modules/Auth/auth.route';
-import { UserRoutes } from '../modules/Users/user.route';
-import { DashboardRoutes } from '../modules/Dashboard/dashboard.route';
 import { CartRoutes } from '../modules/Carts/cart.route';
-import { PaymentRoutes } from '../modules/Payments/payment.route';
 import { CategoryRoutes } from '../modules/Categories/categories.route';
-import { FaqRoutes } from '../modules/Faq/faq.route';
-import { RatingRoutes } from '../modules/Ratings/rating.route';
-import { ProductRoutes } from '../modules/Products/product.route';
-import { PackageRoutes } from '../modules/Package/package.route';
-import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
-import { FavoriteProductRoutes } from '../modules/FavoriteProduct/favoriteProduct.route';
-import { OrderRoutes } from '../modules/Orders/order.route';
-import { MetaDataRoutes } from '../modules/MetaData/metaData.route';
 import { CouponRoutes } from '../modules/Coupons/coupon.route';
+import { DashboardRoutes } from '../modules/Dashboard/dashboard.route';
+import { FaqRoutes } from '../modules/Faq/faq.route';
+import { FavoriteProductRoutes } from '../modules/FavoriteProduct/favoriteProduct.route';
+import { MetaDataRoutes } from '../modules/MetaData/metaData.route';
+import { OrderRoutes } from '../modules/Orders/order.route';
+import { PackageRoutes } from '../modules/Package/package.route';
+import { PaymentRoutes } from '../modules/Payments/payment.route';
+import { ProductRoutes } from '../modules/Products/product.route';
+import { ReviewRoutes } from '../modules/Reviews/review.route';
+import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
+import { UserRoutes } from '../modules/Users/user.route';
 
 const router = express.Router();
 
@@ -63,8 +63,8 @@ const moduleRoutes = [
     route: CouponRoutes,
   },
   {
-    path: '/v1.0/ratings',
-    route: RatingRoutes,
+    path: '/v1.0/reviews',
+    route: ReviewRoutes,
   },
   {
     path: '/v1.0/packages',

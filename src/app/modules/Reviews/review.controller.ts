@@ -1,16 +1,19 @@
 import { Request, RequestHandler, Response } from 'express';
-import catchAsync from '../../../shared/catchAsync';
-import { RatingServices } from './rating.service';
-import sendResponse from '../../../shared/sendResponse';
 import httpStatus from 'http-status';
+import { paginationFields } from '../../../constants/pagination';
 import AppError from '../../../errors/AppError';
+import catchAsync from '../../../shared/catchAsync';
+import pick from '../../../shared/pick';
+import sendResponse from '../../../shared/sendResponse';
+import { reviewFilterableFields } from './review.constant';
+import { RatingServices } from './review.service';
 
 // CREATE
-const createRating: RequestHandler = catchAsync(
+const createReview: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { ...payloadData } = req.body;
 
-    const result = await RatingServices.createRating(payloadData);
+    const result = await RatingServices.createReview(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -23,13 +26,15 @@ const createRating: RequestHandler = catchAsync(
 );
 
 // GET ALL
-const getAllRatings: RequestHandler = catchAsync(
+const getAllReviews: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    // const filters = pick(req.query, ratingFilterableFields);
-    // const paginationOptions = pick(req.query, paginationFields);
-    const { id } = req.params;
+    const filters = pick(req.query, reviewFilterableFields);
+    const paginationOptions = pick(req.query, paginationFields);
 
-    const result = await RatingServices.getAllRatings(id);
+    const result = await RatingServices.getAllReviews(
+      filters,
+      paginationOptions,
+    );
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -43,10 +48,10 @@ const getAllRatings: RequestHandler = catchAsync(
 );
 
 // UPDATE
-const updateRating: RequestHandler = catchAsync(
+const updateReview: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { ...payloadData } = req.body;
-    const result = await RatingServices.updateRating(payloadData);
+    const result = await RatingServices.updateReview(payloadData);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -59,7 +64,7 @@ const updateRating: RequestHandler = catchAsync(
 );
 
 // DELETE
-const deleteRating: RequestHandler = catchAsync(
+const deleteReview: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const { ids } = req.params;
     // FILTER ID AND  CONVERT TO NUMBER
@@ -76,7 +81,7 @@ const deleteRating: RequestHandler = catchAsync(
     }
 
     // GET RESULT FROM SERVICE
-    const result = await RatingServices.deleteRating(parsedIds);
+    const result = await RatingServices.deleteReview(parsedIds);
 
     // SEND RESPONSE
     sendResponse<any>(res, {
@@ -89,8 +94,8 @@ const deleteRating: RequestHandler = catchAsync(
 );
 
 export const RatingControllers = {
-  createRating,
-  getAllRatings,
-  updateRating,
-  deleteRating,
+  createReview,
+  getAllReviews,
+  updateReview,
+  deleteReview,
 };

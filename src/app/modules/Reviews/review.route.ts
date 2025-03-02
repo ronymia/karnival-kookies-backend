@@ -1,6 +1,6 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
-import { RatingControllers } from './rating.controller';
+import { RatingControllers } from './review.controller';
 
 const router = express.Router();
 
@@ -27,21 +27,21 @@ router.post(
   '/',
   verifyToken,
   // validateRequest(RatingValidations.createSchema),
-  RatingControllers.createRating,
+  RatingControllers.createReview,
 );
 
 //  GET ALL
-router.get('/:id', RatingControllers.getAllRatings);
+router.get('/:id', RatingControllers.getAllReviews);
 
 //  UPDATE
-router.put(
+router.patch(
   '/',
   verifyToken,
   //   validateRequest(DiscountValidations.updateSchema),
-  RatingControllers.updateRating,
+  RatingControllers.updateReview,
 );
 
 // DELETE
-router.delete('/:ids', verifyToken, RatingControllers.deleteRating);
+router.delete('/:ids', verifyToken, RatingControllers.deleteReview);
 
-export const RatingRoutes = router;
+export const ReviewRoutes = router;
