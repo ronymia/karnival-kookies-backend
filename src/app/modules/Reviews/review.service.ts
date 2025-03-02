@@ -58,7 +58,17 @@ const getAllReviews = async (
     paginationHelpers.calculatePagination(paginationOptions);
 
   // BUILD THE QUERY
-  let query = `select * FROM reviews`;
+  let query = `
+             SELECT 
+                  r.*, 
+                  JSON_OBJECT(
+                      'id', u.id,
+                      'name', u.name,
+                      'email', u.email
+                  ) AS user
+              FROM reviews r
+              LEFT JOIN users u ON r.user_id = u.id
+                `;
 
   // GENERATE WHERE QUERY
   let whereQuery = '';
