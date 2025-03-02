@@ -63,11 +63,12 @@ const getAllReviews = async (
                   r.*, 
                   JSON_OBJECT(
                       'id', u.id,
-                      'name', u.name,
+                      'name', p.name,
                       'email', u.email
                   ) AS user
               FROM reviews r
               LEFT JOIN users u ON r.user_id = u.id
+              LEFT JOIN profile p ON u.id = p.user_id
                 `;
 
   // GENERATE WHERE QUERY
