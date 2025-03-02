@@ -25,27 +25,6 @@ const createProduct: RequestHandler = catchAsync(
 );
 
 // GET ALL
-const getAllClientProducts: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const filters = pick(req.query, productFilterableFields);
-    const paginationOptions = pick(req.query, paginationFields);
-
-    const result = await ProductServices.getAllClientProducts(
-      filters,
-      paginationOptions,
-    );
-
-    // SEND RESPONSE
-    sendResponse<any>(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Product fetch successfully',
-      meta: result?.meta,
-      data: result?.data,
-    });
-  },
-);
-// GET ALL
 const getAllProducts: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
     const filters = pick(req.query, productFilterableFields);
@@ -181,7 +160,6 @@ export const ProductControllers = {
   createProduct,
   getAllProducts,
   getPriceBounds,
-  getAllClientProducts,
   updateProduct,
   deleteProduct,
   getProductById,

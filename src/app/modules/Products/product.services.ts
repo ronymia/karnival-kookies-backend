@@ -59,146 +59,6 @@ const createProduct = async (payload: TProduct): Promise<any> => {
   return newProduct;
 };
 
-// GET ALL PRODUCT
-const getAllClientProducts = async (
-  filter: any,
-  paginationOptions: TPaginationOptions,
-): Promise<any> => {
-  const {
-    category_id,
-    fromPrice,
-    toPrice,
-    sortByNewest,
-    HighToLow,
-    lowToHigh,
-    searchTerm,
-  } = filter;
-
-  const {
-    page,
-    limit,
-    sortBy = 'created_at',
-    sortOrder = 'ASC',
-  } = paginationOptions;
-
-  // const offset = (Number(page) - 1) * Number(limit);
-
-  // // Base query for products
-  // let query = `
-  //   SELECT
-  //     p.*,
-  //     COALESCE(p.discount_price, p.regular_price) AS effective_price,
-  //     JSON_OBJECT(
-  //       'id', c.id,
-  //       'name', c.name,
-  //       'description', c.description,
-  //       'created_at', c.created_at,
-  //       'updated_at', c.updated_at
-  //     ) AS category,
-  //     JSON_ARRAYAGG(fp.user_id) AS favorite_users
-  //   FROM products p
-  //   LEFT JOIN categories c ON c.id = p.category_id
-  //   LEFT JOIN favorite_products fp ON p.id = fp.product_id
-  // `;
-
-  // // Base query for total count
-  // let countQuery = `
-  //   SELECT
-  //     COUNT(DISTINCT p.id) AS total_count
-  //   FROM products p
-  //   LEFT JOIN categories c ON c.id = p.category_id
-  //   LEFT JOIN favorite_products fp ON p.id = fp.product_id
-  // `;
-
-  // // WHERE conditions
-  // const whereConditions: string[] = [];
-  // const values: any[] = [];
-
-  // if (category_id) {
-  //   whereConditions.push('p.category_id = ?');
-  //   values.push(category_id);
-  // }
-
-  // if (fromPrice) {
-  //   whereConditions.push('COALESCE(p.discount_price, p.regular_price) >= ?');
-  //   values.push(fromPrice);
-  // }
-
-  // if (toPrice) {
-  //   whereConditions.push('COALESCE(p.discount_price, p.regular_price) <= ?');
-  //   values.push(toPrice);
-  // }
-
-  // if (searchTerm) {
-  //   whereConditions.push(
-  //     `(p.name LIKE ? OR p.description LIKE ? OR c.name LIKE ?)`,
-  //   );
-  //   const term = `%${searchTerm}%`;
-  //   values.push(term, term, term);
-  // }
-
-  // // Add WHERE clause to both queries if conditions exist
-  // if (whereConditions.length > 0) {
-  //   const whereClause = ` WHERE ${whereConditions.join(' AND ')}`;
-  //   query += whereClause;
-  //   countQuery += whereClause;
-  // }
-
-  // // GROUP BY for product query
-  // query += ` GROUP BY p.id`;
-
-  // // Sorting
-  // if (sortByNewest) {
-  //   query += ` ORDER BY p.created_at DESC`;
-  // } else if (HighToLow) {
-  //   query += ` ORDER BY effective_price DESC`;
-  // } else if (lowToHigh) {
-  //   query += ` ORDER BY effective_price ASC`;
-  // } else {
-  //   query += ` ORDER BY ${sortBy} ${sortOrder}`;
-  // }
-
-  // // Pagination
-  // query += ` LIMIT ? OFFSET ?`;
-  // values.push(Number(limit), Number(offset));
-
-  // // Execute the queries
-  // const [products] = (await pool.query(query, values)) as any[];
-  // const [totalCountResult] = (await pool.query(
-  //   countQuery,
-  //   values.slice(0, -2),
-  // )) as any[];
-  const query = `
-    SELECT p.*,
-           JSON_OBJECT(
-             'id', c.id,
-             'name', c.name,
-             'description', c.description
-           ) AS category,
-           CASE
-             WHEN p.discount_type = 'fixed' THEN p.price - p.discount_value
-             WHEN p.discount_type = 'percent' THEN p.price - (p.price * p.discount_value / 100)
-             ELSE p.price
-           END AS net_price
-    FROM products p
-    JOIN categories c ON p.category_id = c.id;
-  `;
-
-  const [products] = await pool.query<RowDataPacket[]>(query);
-  const [totalProductsResult] = await pool.query<RowDataPacket[]>(
-    'SELECT COUNT(*) AS count FROM products',
-  );
-
-  return {
-    meta: {
-      total: totalProductsResult[0].count || 0,
-      page,
-      limit,
-    },
-    data: products,
-  };
-};
-
 // GET ALL
 const getAllProducts = async (
   filters: any,
@@ -364,19 +224,24 @@ const getPriceBounds = async (): Promise<any> => {
 
 //   GET SINGLE PRODUCT
 const getProductById = async (id: number): Promise<any> => {
-  const [product] = (await pool.query(
+  const [product] = await pool.query<RowDataPacket[]>(
     `SELECT 
       p.*, 
       JSON_OBJECT(
         'id', c.id,
         'name', c.name,
         'description', c.description
-      ) AS category
+      ) AS category,
+       CASE
+          WHEN p.discount_type = 'fixed' THEN p.price - p.discount_value
+          WHEN p.discount_type = 'percent' THEN p.price - (p.price * p.discount_value / 100)
+        ELSE p.price
+      END AS net_price    
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
     WHERE p.id = ?`,
     [id],
-  )) as any[];
+  );
 
   // IF PRODUCT NOT FOUND
   if (product.length === 0) {
@@ -505,7 +370,6 @@ export const ProductServices = {
   createProduct,
   getAllProducts,
   getPriceBounds,
-  getAllClientProducts,
   updateProduct,
   deleteProduct,
   getProductById,
