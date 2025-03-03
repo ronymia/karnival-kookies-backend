@@ -99,14 +99,14 @@ const getAllReviews = async (
   ]);
 
   // BUILD QUERY COUNT
-  const countQuery = 'SELECT COUNT(*) as count FROM reviews';
-  const countQueryParams: any[] = []; // QUERY COUNT PARAMS
-  // IF PRODUCT ID EXIST
+  let countQuery = 'SELECT COUNT(*) as count FROM reviews';
+  const countQueryParams: any[] = [];
+
   if (filters?.product_id) {
-    query += `WHERE product_id = ?`;
-    countQueryParams.push(filters?.product_id);
+    countQuery += ' WHERE product_id = ?';
+    countQueryParams.push(filters.product_id);
   }
-  // EXECUTE THE QUERY COUNT
+
   const [totalResult] = await pool.query<RowDataPacket[]>(
     countQuery,
     countQueryParams,
