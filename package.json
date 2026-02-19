@@ -10,7 +10,11 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "migrate": "ts-node src/scripts/migrate.ts",
+    "migration:create": "ts-node src/scripts/create-migration.ts",
+    "seed:admin": "ts-node src/scripts/seed-admin.ts",
+    "seed:products": "ts-node src/scripts/seed-products.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
