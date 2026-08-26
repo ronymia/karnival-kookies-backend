@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { mysqlConnection } from '../../../config';
+import { mysqlcreateConnection } from '../../../config';
+import { logger, errorLogger } from '../../../shared/logger';
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/app/database/migrations');
 
 async function migrate() {
-  const connection = await mysqlConnection;
+  const connection = await mysqlcreateConnection;
 
   try {
     // 1. Create tracking table if not exists
@@ -33,7 +34,7 @@ async function migrate() {
     for (const file of upFiles) {
       const baseName = file.replace('.up.sql', '');
       if (!executed.has(baseName)) {
-        console.log(`Migrating: ${file}...`);
+        logger.info(`Migrating: ${file}...`);
         const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
         
         await connection.query(sql);
@@ -46,12 +47,12 @@ async function migrate() {
     }
 
     if (ranCount === 0) {
-      console.log('Nothing to migrate. Database is up to date.');
+      logger.info('Nothing to migrate. Database is up to date.');
     } else {
-      console.log(`Successfully executed ${ranCount} migration(s) in batch ${nextBatch}.`);
+      logger.info(`Successfully executed ${ranCount} migration(s) in batch ${nextBatch}.`);
     }
   } catch (error) {
-    console.error('Migration failed:', error);
+    errorLogger.error(error, 'Migration failed:');
     process.exit(1);
   } finally {
     await connection.end();

@@ -1,20 +1,14 @@
-import mysql from 'mysql2/promise';
-import { envConfig } from '../config';
+import { envConfig, mysqlcreateConnection } from '../config';
+import { errorLogger, logger } from '../shared/logger';
 
 const seedProductsAndPackages = async () => {
-  console.log('Starting product and package seeding...');
+  logger.info('Starting product and package seeding...');
 
   let connection;
   try {
-    connection = await mysql.createConnection({
-      host: envConfig.db.db_host,
-      port: Number(envConfig.db.db_port),
-      user: envConfig.db.db_username,
-      password: envConfig.db.db_password,
-      database: envConfig.db.db_database,
-    });
+    connection = await mysqlcreateConnection;
 
-    console.log(`Connected to database '${envConfig.db.db_database}'.`);
+    logger.info(`Connected to database '${envConfig.db.db_database}'.`);
 
     // 1. Seed Categories
     const categories = [
@@ -40,7 +34,7 @@ const seedProductsAndPackages = async () => {
           [cat.name, cat.description],
         );
         categoryIds[cat.name] = result.insertId;
-        console.log(`Seeded Category: ${cat.name}`);
+        logger.info(`Seeded Category: ${cat.name}`);
       }
     }
 
@@ -159,7 +153,7 @@ const seedProductsAndPackages = async () => {
             prod.description,
           ],
         );
-        console.log(`Seeded Product: ${prod.name}`);
+        logger.info(`Seeded Product: ${prod.name}`);
       }
     }
 
@@ -239,15 +233,15 @@ const seedProductsAndPackages = async () => {
             pkg.description,
           ],
         );
-        console.log(`Seeded Package: ${pkg.name}`);
+        logger.info(`Seeded Package: ${pkg.name}`);
       }
     }
 
-    console.log('Seeding completed successfully.');
+    logger.info('Seeding completed successfully.');
     await connection.end();
     process.exit(0);
   } catch (error) {
-    console.error('Seeding failed:', error);
+    errorLogger.error(error, 'Seeding failed:');
     if (connection) await connection.end();
     process.exit(1);
   }

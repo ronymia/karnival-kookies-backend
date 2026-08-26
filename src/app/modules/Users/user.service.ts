@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
-import { pool } from '../../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../../config';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';

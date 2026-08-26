@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
-import { pool } from '../../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../../config';
 import { TProduct } from './product.interface';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 

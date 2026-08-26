@@ -1,21 +1,15 @@
-import mysql from 'mysql2/promise';
 import bcrypt from 'bcrypt';
-import { envConfig } from '../config';
+import { envConfig, mysqlcreateConnection } from '../config';
+import { errorLogger, logger } from '../shared/logger';
 
 const seedSuperAdmin = async () => {
-  console.log('Starting superadmin seeding...');
+  logger.info('Starting superadmin seeding...');
 
   let connection;
   try {
-    connection = await mysql.createConnection({
-      host: envConfig.db.db_host,
-      port: Number(envConfig.db.db_port),
-      user: envConfig.db.db_username,
-      password: envConfig.db.db_password,
-      database: envConfig.db.db_database,
-    });
+    connection = await mysqlcreateConnection;
 
-    console.log(`Connected to database '${envConfig.db.db_database}'.`);
+    logger.info(`Connected to database '${envConfig.db.db_database}'.`);
 
     const email = 'mdronymia040@gmail.com';
     const password = envConfig.defaultPassword.default_admin_pass || '12345678@We';
@@ -28,7 +22,7 @@ const seedSuperAdmin = async () => {
     );
 
     if (existingUsers.length > 0) {
-      console.log(`User with email '${email}' already exists. Skipping seed.`);
+      logger.info(`User with email '${email}' already exists. Skipping seed.`);
       await connection.end();
       return;
     }
@@ -37,7 +31,7 @@ const seedSuperAdmin = async () => {
     const saltRounds = Number(envConfig.bcrypt_salt_rounds) || 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    console.log('Inserting superadmin into users table...');
+    logger.info('Inserting superadmin into users table...');
 
     // Start transaction
     await connection.beginTransaction();
@@ -51,7 +45,7 @@ const seedSuperAdmin = async () => {
 
       const userId = userResult.insertId;
 
-      console.log(`User created with ID: ${userId}. Inserting profile...`);
+      logger.info(`User created with ID: ${userId}. Inserting profile...`);
 
       // 4. Insert into profiles table
       await connection.query(
@@ -60,11 +54,11 @@ const seedSuperAdmin = async () => {
       );
 
       await connection.commit();
-      console.log('Superadmin and profile seeded successfully.');
-      console.log('-------------------------------------------');
-      console.log(`Email: ${email}`);
-      console.log(`Password: ${password}`);
-      console.log('-------------------------------------------');
+      logger.info('Superadmin and profile seeded successfully.');
+      logger.info('-------------------------------------------');
+      logger.info(`Email: ${email}`);
+      logger.info(`Password: ${password}`);
+      logger.info('-------------------------------------------');
     } catch (err) {
       await connection.rollback();
       throw err;
@@ -73,7 +67,7 @@ const seedSuperAdmin = async () => {
     await connection.end();
     process.exit(0);
   } catch (error) {
-    console.error('Seeding failed:', error);
+    errorLogger.error(error, 'Seeding failed:');
     if (connection) await connection.end();
     process.exit(1);
   }

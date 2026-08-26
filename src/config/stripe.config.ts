@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
-import { envConfig } from '../config';
+import { envConfig } from './index';
 
 export const stripe = new Stripe(envConfig.stripe.key as string, {
-  apiVersion: '2024-09-30.acacia',
+  apiVersion: '2026-07-29.dahlia',
   typescript: true,
 });

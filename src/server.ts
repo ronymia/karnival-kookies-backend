@@ -2,7 +2,7 @@ import { Server } from 'node:http';
 import app from './app';
 import { errorLogger, logger } from './shared/logger';
 import 'dotenv/config';
-import { envConfig, mysqlConnection } from './config';
+import { envConfig, mysqlcreateConnection } from './config';
 
 (async ()=> {
   // SERVER LISTENING PORT
@@ -10,9 +10,11 @@ import { envConfig, mysqlConnection } from './config';
     logger.info(`Server running on port ${envConfig.port}`);
   });
 
-  // DATABASE CONNECTION
-  mysqlConnection
-    .then(() => logger.info('Database connection successful'))
+  mysqlcreateConnection.getConnection()
+    .then((connection) => {
+      logger.info('Database connection successful');
+      connection.release();
+    })
     .catch((err) => errorLogger.error(err, 'Database connection error'));
 
   // Graceful shutdown function

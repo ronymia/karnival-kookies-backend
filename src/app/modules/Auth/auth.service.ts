@@ -1,16 +1,16 @@
 import httpStatus from 'http-status';
-import AppError from '../../../errors/AppError';
-import { IRegisterUser, TLoginUser } from './auth.interface';
-import { JwtHelpers } from '../../../helpers/jwtHelpers';
-import { envConfig } from '../../../config';
-import { PasswordHelpers } from '../../../helpers/passwordHelpers';
-import { pool } from '../../../shared/mySQL';
-import { generateCode } from './auth.utils';
-import { EmailHelpers } from '../../../helpers/emailHelpers';
 import { Secret } from 'jsonwebtoken';
-import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { ENUM_USER_ROLE } from '../../../enums/user';
 import moment from 'moment';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { envConfig, mysqlcreateConnection as pool } from '../../../config';
+import { ENUM_USER_ROLE } from '../../../enums/user';
+import AppError from '../../../errors/AppError';
+import { EmailHelpers } from '../../../helpers/emailHelpers';
+import { JwtHelpers } from '../../../helpers/jwtHelpers';
+import { PasswordHelpers } from '../../../helpers/passwordHelpers';
+import { errorLogger } from '../../../shared/logger';
+import { IRegisterUser, TLoginUser } from './auth.interface';
+import { generateCode } from './auth.utils';
 
 // USER REGISTER FUNCTION
 const registerUser = async (payload: IRegisterUser) => {
@@ -293,7 +293,7 @@ const refreshToken = async (token: string) => {
     );
   } catch (err: any) {
     // Log the error for debugging purposes
-    console.error('JWT verification error:', err);
+    errorLogger.error(err, 'JWT verification error:');
 
     // Differentiate between token expiration and other errors
     if (err.name === 'TokenExpiredError') {

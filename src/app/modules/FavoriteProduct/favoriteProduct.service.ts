@@ -1,5 +1,5 @@
 import { ResultSetHeader } from 'mysql2';
-import { pool } from '../../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../../config';
 import { IFavoriteProduct } from './favoriteProduct.interface';
 
 // ADD FAVORITE PRODUCT

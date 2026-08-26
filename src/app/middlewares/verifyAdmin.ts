@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { pool } from '../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../config';
 import AppError from '../../errors/AppError';
 import httpStatus from 'http-status';
 

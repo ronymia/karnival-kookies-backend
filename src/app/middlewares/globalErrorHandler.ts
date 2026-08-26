@@ -1,5 +1,5 @@
 import { ErrorRequestHandler } from 'express';
-import { errorLogger } from '../../shared/logger';
+import { logger, errorLogger } from '../../shared/logger';
 import { TErrorSources } from '../../interfaces/error';
 import AppError from '../../errors/AppError';
 import { ZodError } from 'zod';
@@ -9,8 +9,8 @@ import handleZodError from '../../errors/handleZodError';
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   //Debug
   envConfig.node_env === 'development'
-    ? console.log(`🐱‍🏍 globalErrorHandler ~~`, err)
-    : errorLogger.error(`🐱‍🏍 globalErrorHandler ~~`, err);
+    ? logger.info(err, `🐱‍🏍 globalErrorHandler ~~`)
+    : errorLogger.error(err, `🐱‍🏍 globalErrorHandler ~~`);
 
   //SETTING DEFAULT VALUES
   let statusCode = 500;
@@ -57,7 +57,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   }
 
   //ultimate return
-  return res.status(statusCode).json({
+  res.status(statusCode).json({
     success: false,
     message,
     errorSources,

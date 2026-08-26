@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { envConfig } from '../config';
+import { logger, errorLogger } from '../shared/logger';
 
 // MESSAGE SENDER CREDENTIAL
 // const transporter = nodemailer.createTransport({
@@ -144,9 +145,9 @@ export const sendOrderStatusEmail = async (
       html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">${body}</div>`,
     });
 
-    console.log(`Order status email (${status}) sent to ${email}`);
+    logger.info(`Order status email (${status}) sent to ${email}`);
   } catch (error) {
-    console.log('Failed to send email:', error);
+    logger.info(error, 'Failed to send email:');
   }
 };
 

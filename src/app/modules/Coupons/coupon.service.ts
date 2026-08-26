@@ -1,5 +1,5 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { pool } from '../../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../../config';
 import { TPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 

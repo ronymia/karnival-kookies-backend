@@ -1,6 +1,6 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { TPaginationOptions } from '../../../interfaces/pagination';
-import { pool } from '../../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../../config';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { ISubscribersFilters } from './subscribers.interface';
 

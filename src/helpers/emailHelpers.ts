@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { envConfig } from '../config';
+import { logger, errorLogger } from '../shared/logger';
 
 // MESSAGE SENDER CREDENTIAL
 // const transporter = nodemailer.createTransport({
@@ -210,10 +211,10 @@ async function sendNewsletter(email: string, subject: string, content: string) {
       subject: subject || 'Weekly Update',
       html: content || `<p>Your content here</p>`,
     });
-    console.log('Newsletter sent: %s', info.messageId);
+    logger.info('Newsletter sent: %s', info.messageId);
     return info;
   } catch (error) {
-    console.error('Error sending newsletter: ', error);
+    errorLogger.error(error, 'Error sending newsletter: ');
   }
 }
 

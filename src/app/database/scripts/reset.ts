@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { mysqlConnection } from '../../../config';
+import { mysqlcreateConnection } from '../../../config';
+import { logger, errorLogger } from '../../../shared/logger';
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/app/database/migrations');
 
 async function reset() {
-  const connection = await mysqlConnection;
+  const connection = await mysqlcreateConnection;
 
   try {
     const [rows]: any = await connection.query(
@@ -13,7 +14,7 @@ async function reset() {
     );
 
     if (rows.length === 0) {
-      console.log('Database is already empty.');
+      logger.info('Database is already empty.');
       return;
     }
 
@@ -22,16 +23,16 @@ async function reset() {
       const filePath = path.join(MIGRATIONS_DIR, downFile);
 
       if (fs.existsSync(filePath)) {
-        console.log(`Reverting: ${downFile}...`);
+        logger.info(`Reverting: ${downFile}...`);
         const sql = fs.readFileSync(filePath, 'utf8');
         await connection.query(sql);
       }
       await connection.query(`DELETE FROM _migrations WHERE name = ?`, [row.name]);
     }
 
-    console.log('Database reset complete. All migrations removed.');
+    logger.info('Database reset complete. All migrations removed.');
   } catch (error) {
-    console.error('Reset failed:', error);
+    errorLogger.error(error, 'Reset failed:');
     process.exit(1);
   } finally {
     await connection.end();

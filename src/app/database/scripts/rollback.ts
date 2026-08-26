@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { mysqlConnection } from '../../../config';
+import { mysqlcreateConnection } from '../../../config';
+import { logger, errorLogger } from '../../../shared/logger';
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/app/database/migrations');
 
 async function rollback() {
-  const connection = await mysqlConnection;
+  const connection = await mysqlcreateConnection;
 
   try {
     // 1. Find the latest batch number
@@ -13,7 +14,7 @@ async function rollback() {
     const latestBatch = batchRows[0]?.max_batch;
 
     if (!latestBatch) {
-      console.log('Nothing to rollback.');
+      logger.info('Nothing to rollback.');
       return;
     }
 
@@ -28,19 +29,19 @@ async function rollback() {
       const filePath = path.join(MIGRATIONS_DIR, downFile);
 
       if (fs.existsSync(filePath)) {
-        console.log(`Rolling back: ${downFile}...`);
+        logger.info(`Rolling back: ${downFile}...`);
         const sql = fs.readFileSync(filePath, 'utf8');
         await connection.query(sql);
       } else {
-        console.warn(`Warning: Down file ${downFile} not found. Skipping execution.`);
+        logger.warn(`Warning: Down file ${downFile} not found. Skipping execution.`);
       }
 
       await connection.query(`DELETE FROM _migrations WHERE name = ?`, [row.name]);
     }
 
-    console.log(`Rolled back batch ${latestBatch} successfully.`);
+    logger.info(`Rolled back batch ${latestBatch} successfully.`);
   } catch (error) {
-    console.error('Rollback failed:', error);
+    errorLogger.error(error, 'Rollback failed:');
     process.exit(1);
   } finally {
     await connection.end();

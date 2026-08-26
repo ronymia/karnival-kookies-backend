@@ -1,5 +1,5 @@
 import { envConfig } from '../../../config';
-import { stripe } from '../../../shared/stripe';
+import { stripe } from '../../../config/stripe.config';
 import { PAYMENT_CURRENCY, PAYMENT_METHOD } from './payment.interface';
 
 // STRIPE CONFIG

@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
-import { pool } from '../../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../../config';
 import { RowDataPacket } from 'mysql2';
 
 // GET ALL DASHBOARD DATA

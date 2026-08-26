@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { envConfig } from '../config';
+import { logger, errorLogger } from '../shared/logger';
 
 // MESSAGE SENDER CREDENTIAL
 // const transporter = nodemailer.createTransport({
@@ -129,8 +130,8 @@ export const sendPromotionalEmail = async (
       html: `<div style="font-family: Arial, sans-serif; line-height: 1.6;">${emailContent.body}</div>`,
     });
 
-    console.log(`${type} email sent to ${email}`);
+    logger.info(`${type} email sent to ${email}`);
   } catch (error) {
-    console.error('Failed to send email:', error);
+    errorLogger.error(error, 'Failed to send email:');
   }
 };

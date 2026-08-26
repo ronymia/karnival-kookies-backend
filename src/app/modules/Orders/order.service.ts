@@ -1,6 +1,6 @@
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { TPaginationOptions } from '../../../interfaces/pagination';
-import { pool } from '../../../shared/mySQL';
+import { mysqlcreateConnection as pool } from '../../../config';
 import { TOrderFilter } from './order.interface';
 import { RowDataPacket } from 'mysql2';
 
