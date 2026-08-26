@@ -1,0 +1,16 @@
+CREATE TABLE profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    phone VARCHAR(20),
+    address VARCHAR(50),
+    city VARCHAR(20),
+    country VARCHAR(20),
+    postcode VARCHAR(10),
+    gender VARCHAR(10) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    image VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);

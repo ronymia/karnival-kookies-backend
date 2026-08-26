@@ -1,5 +1,19 @@
+# node
 node_modules
 dist
 logs/
+logs/*
 coverage/
 config.bat
+
+# yarn
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# env
+.env

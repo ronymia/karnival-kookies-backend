@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import config from '../config';
+import { envConfig } from '../config';
 
 // MESSAGE SENDER CREDENTIAL
 // const transporter = nodemailer.createTransport({
@@ -15,8 +15,8 @@ import config from '../config';
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: config.node_email,
-    pass: config.node_email_password,
+    user: envConfig.nodeMailer.node_email,
+    pass: envConfig.nodeMailer.node_email_password,
   },
 });
 

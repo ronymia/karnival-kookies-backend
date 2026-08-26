@@ -1,6 +1,6 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcrypt';
-import config from '../config';
+import { envConfig } from '../config';
 
 const seedSuperAdmin = async () => {
   console.log('Starting superadmin seeding...');
@@ -8,17 +8,17 @@ const seedSuperAdmin = async () => {
   let connection;
   try {
     connection = await mysql.createConnection({
-      host: config.db_host,
-      port: Number(config.db_port),
-      user: config.db_username,
-      password: config.db_password,
-      database: config.db_database,
+      host: envConfig.db.db_host,
+      port: Number(envConfig.db.db_port),
+      user: envConfig.db.db_username,
+      password: envConfig.db.db_password,
+      database: envConfig.db.db_database,
     });
 
-    console.log(`Connected to database '${config.db_database}'.`);
+    console.log(`Connected to database '${envConfig.db.db_database}'.`);
 
     const email = 'mdronymia040@gmail.com';
-    const password = config.default_admin_pass || '12345678@We';
+    const password = envConfig.defaultPassword.default_admin_pass || '12345678@We';
     const role = 'admin';
 
     // 1. Check if super_admin already exists
@@ -34,7 +34,7 @@ const seedSuperAdmin = async () => {
     }
 
     // 2. Hash password
-    const saltRounds = Number(config.bcrypt_salt_rounds) || 12;
+    const saltRounds = Number(envConfig.bcrypt_salt_rounds) || 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     console.log('Inserting superadmin into users table...');

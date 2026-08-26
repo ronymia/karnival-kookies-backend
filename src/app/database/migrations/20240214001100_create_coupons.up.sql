@@ -1,0 +1,10 @@
+CREATE TABLE coupons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(255) NOT NULL UNIQUE,
+    discount_type enum('percent', 'fixed') NOT NULL,
+    discount_value DECIMAL(10, 2) NOT NULL,
+    minimum_spend DECIMAL(10, 2) DEFAULT NULL,
+    used BOOLEAN DEFAULT 0 NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

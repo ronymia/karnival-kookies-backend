@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise';
 import fs from 'fs';
 import path from 'path';
-import config from '../config';
+import { envConfig } from '../config';
 
 const initDB = async () => {
   console.log('Starting database initialization...');
@@ -10,21 +10,21 @@ const initDB = async () => {
     // strict: false might be needed if not properly set in env, but let's try standard connection first
     // We connect without database selected first to create it
     const connection = await mysql.createConnection({
-      host: config.db_host,
-      port: Number(config.db_port),
-      user: config.db_username,
-      password: config.db_password,
+      host: envConfig.db.db_host,
+      port: Number(envConfig.db.db_port),
+      user: envConfig.db.db_username,
+      password: envConfig.db.db_password,
     });
 
     console.log('Connected to MySQL server.');
 
     await connection.query(
-      `CREATE DATABASE IF NOT EXISTS \`${config.db_database}\`;`,
+      `CREATE DATABASE IF NOT EXISTS \`${envConfig.db.db_database}\`;`,
     );
-    console.log(`Database '${config.db_database}' check/creation completed.`);
+    console.log(`Database '${envConfig.db.db_database}' check/creation completed.`);
 
-    await connection.changeUser({ database: config.db_database });
-    console.log(`Switched to database '${config.db_database}'.`);
+    await connection.changeUser({ database: envConfig.db.db_database });
+    console.log(`Switched to database '${envConfig.db.db_database}'.`);
 
     const schemaPath = path.join(process.cwd(), 'databaseSchema.sql');
     if (!fs.existsSync(schemaPath)) {

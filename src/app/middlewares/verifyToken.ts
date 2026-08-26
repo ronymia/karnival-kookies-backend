@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import AppError from '../../errors/AppError';
-import config from '../../config';
+import { envConfig } from '../../config';
 import { Secret } from 'jsonwebtoken';
 import { JwtHelpers } from '../../helpers/jwtHelpers';
 import httpStatus from 'http-status';
@@ -23,7 +23,7 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction) => {
 
     verifiedUser = JwtHelpers.verifyToken(
       token,
-      config.jwt.access_token as Secret,
+      envConfig.jwt.access_token as Secret,
     );
 
     req.user = verifiedUser; // role  , userId, email

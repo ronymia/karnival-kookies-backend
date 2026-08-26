@@ -1,0 +1,20 @@
+CREATE TABLE shipping_info (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    recipient_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    apartment TEXT NOT NULL,
+    address TEXT NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    carrier VARCHAR(100) NOT NULL DEFAULT 'Pathao Courier',
+    delivery_instruction TEXT NOT NULL,
+    status ENUM('pending', 'shipped', 'delivered') NOT NULL DEFAULT 'pending',
+    estimated_delivery TIMESTAMP DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);

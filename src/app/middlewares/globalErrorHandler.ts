@@ -3,12 +3,12 @@ import { errorLogger } from '../../shared/logger';
 import { TErrorSources } from '../../interfaces/error';
 import AppError from '../../errors/AppError';
 import { ZodError } from 'zod';
-import config from '../../config';
+import { envConfig } from '../../config';
 import handleZodError from '../../errors/handleZodError';
 
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   //Debug
-  config.node_env === 'development'
+  envConfig.node_env === 'development'
     ? console.log(`🐱‍🏍 globalErrorHandler ~~`, err)
     : errorLogger.error(`🐱‍🏍 globalErrorHandler ~~`, err);
 
@@ -62,7 +62,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     message,
     errorSources,
     err,
-    stack: config.node_env === 'development' ? err?.stack : null,
+    stack: envConfig.node_env === 'development' ? err?.stack : null,
   });
 };
 

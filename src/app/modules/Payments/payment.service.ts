@@ -1,10 +1,10 @@
-import config from '../../../config';
+import { envConfig } from '../../../config';
 import { stripe } from '../../../shared/stripe';
 import { PAYMENT_CURRENCY, PAYMENT_METHOD } from './payment.interface';
 
 // STRIPE CONFIG
 const stripeConfig = async () => {
-  const stripeKey = config.stripe_public_key;
+  const stripeKey = envConfig.stripe.public_key;
   return { publishableKey: stripeKey };
 };
 

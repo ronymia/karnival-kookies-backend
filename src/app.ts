@@ -4,11 +4,14 @@ import cookieParser from 'cookie-parser';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import routes from './app/routes';
 import notFoundRoute from './app/middlewares/notFoundRoute';
-import path from 'path';
+import path from 'node:path';
 import { EmailSend } from './app/cronJobs/newsletter';
 import httpStatus from 'http-status';
+import pinoHttp from 'pino-http';
+import { serverLogger } from './shared/logger';
 
 const app: Application = express();
+app.disable('x-powered-by');
 
 app.use(
   cors({
@@ -23,6 +26,9 @@ app.use('/', express.static(path.join(process.cwd(), 'Images')));
 //parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Http Request Logger
+app.use(pinoHttp({ logger: serverLogger }));
 
 //CRON JOBS FOR EMAIL
 EmailSend.sendWeeklyNewsletters();

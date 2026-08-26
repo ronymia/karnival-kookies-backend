@@ -1,16 +1,16 @@
 import mysql from 'mysql2/promise';
-import config from '../config';
+import { envConfig } from '../config';
 
 const listDBs = async () => {
   try {
     const connection = await mysql.createConnection({
-      host: config.db_host,
-      port: Number(config.db_port),
-      user: config.db_username,
-      password: config.db_password,
+      host: envConfig.db.db_host,
+      port: Number(envConfig.db.db_port),
+      user: envConfig.db.db_username,
+      password: envConfig.db.db_password,
     });
 
-    console.log(`Connected to ${config.db_host}`);
+    console.log(`Connected to ${envConfig.db.db_host}`);
     const [rows] = await connection.query('SHOW DATABASES;');
     console.table(rows);
 

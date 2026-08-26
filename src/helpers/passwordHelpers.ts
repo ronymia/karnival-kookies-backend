@@ -1,11 +1,11 @@
 import bcrypt from 'bcrypt';
-import config from '../config';
+import { envConfig } from '../config';
 
 const passwordHash = async (password: any) => {
   // CONVERT TO HASH PASSWORD
   const passwordHash = await bcrypt.hash(
     password,
-    Number(config.bcrypt_salt_rounds),
+    Number(envConfig.bcrypt_salt_rounds),
   );
 
   return passwordHash;

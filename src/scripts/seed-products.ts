@@ -1,5 +1,5 @@
 import mysql from 'mysql2/promise';
-import config from '../config';
+import { envConfig } from '../config';
 
 const seedProductsAndPackages = async () => {
   console.log('Starting product and package seeding...');
@@ -7,14 +7,14 @@ const seedProductsAndPackages = async () => {
   let connection;
   try {
     connection = await mysql.createConnection({
-      host: config.db_host,
-      port: Number(config.db_port),
-      user: config.db_username,
-      password: config.db_password,
-      database: config.db_database,
+      host: envConfig.db.db_host,
+      port: Number(envConfig.db.db_port),
+      user: envConfig.db.db_username,
+      password: envConfig.db.db_password,
+      database: envConfig.db.db_database,
     });
 
-    console.log(`Connected to database '${config.db_database}'.`);
+    console.log(`Connected to database '${envConfig.db.db_database}'.`);
 
     // 1. Seed Categories
     const categories = [

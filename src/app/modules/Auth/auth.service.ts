@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 import AppError from '../../../errors/AppError';
 import { IRegisterUser, TLoginUser } from './auth.interface';
 import { JwtHelpers } from '../../../helpers/jwtHelpers';
-import config from '../../../config';
+import { envConfig } from '../../../config';
 import { PasswordHelpers } from '../../../helpers/passwordHelpers';
 import { pool } from '../../../shared/mySQL';
 import { generateCode } from './auth.utils';
@@ -135,15 +135,15 @@ const registerUser = async (payload: IRegisterUser) => {
   // // ACCESS TOKEN
   // const accessToken = JwtHelpers.createToken(
   //   { email, role },
-  //   config.jwt.access_token as Secret,
-  //   config.jwt.access_token_expires_in as string,
+  //   envConfig.jwt.access_token as Secret,
+  //   envConfig.jwt.access_token_expires_in as string,
   // );
 
   // // REFRESH TOKEN
   // const refreshToken = JwtHelpers.createToken(
   //   { email, role },
-  //   config.jwt.refresh_token as Secret,
-  //   config.jwt.refresh_token_expires_in as string,
+  //   envConfig.jwt.refresh_token as Secret,
+  //   envConfig.jwt.refresh_token_expires_in as string,
   // );
 
   // // RETURN TO CONTROLLER
@@ -222,13 +222,13 @@ const loginUser = async (payload: TLoginUser) => {
   // create JWT token and refresh token
   const accessToken = JwtHelpers.createToken(
     { id: user?.id, email: user?.email, role: user?.role },
-    config.jwt.access_token as Secret,
-    config.jwt.access_token_expires_in as string,
+    envConfig.jwt.access_token as Secret,
+    envConfig.jwt.access_token_expires_in as string,
   );
   const refreshToken = JwtHelpers.createToken(
     { id: user?.id, email: user?.email, role: user?.role },
-    config.jwt.refresh_token as Secret,
-    config.jwt.refresh_token_expires_in as string,
+    envConfig.jwt.refresh_token as Secret,
+    envConfig.jwt.refresh_token_expires_in as string,
   );
   // IF USER VERIFIED
   return {
@@ -261,14 +261,14 @@ const getAccessToken = async (email: string) => {
   // GENERATE NEW ACCESS TOKEN
   const accessToken = JwtHelpers.createToken(
     { id: user?.id, email: user?.email, role: user?.role },
-    config.jwt.access_token as Secret,
-    config.jwt.access_token_expires_in as string,
+    envConfig.jwt.access_token as Secret,
+    envConfig.jwt.access_token_expires_in as string,
   );
   // GENERATE NEW REFRESH TOKEN
   const refreshToken = JwtHelpers.createToken(
     { id: user?.id, email: user?.email, role: user?.role },
-    config.jwt.refresh_token as Secret,
-    config.jwt.refresh_token_expires_in as string,
+    envConfig.jwt.refresh_token as Secret,
+    envConfig.jwt.refresh_token_expires_in as string,
   );
 
   // IF USER VERIFIED
@@ -289,7 +289,7 @@ const refreshToken = async (token: string) => {
   try {
     verifiedToken = JwtHelpers.verifyToken(
       token,
-      config.jwt.refresh_token as Secret,
+      envConfig.jwt.refresh_token as Secret,
     );
   } catch (err: any) {
     // Log the error for debugging purposes
@@ -320,8 +320,8 @@ const refreshToken = async (token: string) => {
   //generate new token
   const newAccessToken = JwtHelpers.createToken(
     { id: user?.id, email: user?.email, role: user?.role },
-    config.jwt.access_token as Secret,
-    config.jwt.access_token_expires_in as string,
+    envConfig.jwt.access_token as Secret,
+    envConfig.jwt.access_token_expires_in as string,
   );
 
   return {
@@ -443,13 +443,13 @@ const verifyUserMail = async (payload: { email: string; otp: string }) => {
   // create JWT token and refresh token
   const accessToken = JwtHelpers.createToken(
     { id: user?.id, email: user?.email, role: user?.role },
-    config.jwt.access_token as Secret,
-    config.jwt.access_token_expires_in as string,
+    envConfig.jwt.access_token as Secret,
+    envConfig.jwt.access_token_expires_in as string,
   );
   const refreshToken = JwtHelpers.createToken(
     { id: user?.id, email: user?.email, role: user?.role },
-    config.jwt.refresh_token as Secret,
-    config.jwt.refresh_token_expires_in as string,
+    envConfig.jwt.refresh_token as Secret,
+    envConfig.jwt.refresh_token_expires_in as string,
   );
   // IF USER VERIFIED
   return {

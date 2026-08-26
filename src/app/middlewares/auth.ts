@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import { Secret } from 'jsonwebtoken';
 import AppError from '../../errors/AppError';
 import { JwtHelpers } from '../../helpers/jwtHelpers';
-import config from '../../config';
+import { envConfig } from '../../config';
 
 const auth =
   (...requiredRoles: string[]) =>
@@ -25,7 +25,7 @@ const auth =
 
       verifiedUser = JwtHelpers.verifyToken(
         token,
-        config.jwt.access_token as Secret,
+        envConfig.jwt.access_token as Secret,
       );
 
       req.user = verifiedUser; // role  , userId, email

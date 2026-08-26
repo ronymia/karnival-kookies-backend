@@ -1,52 +1,106 @@
-/* eslint-disable no-undef */
-import path from 'path';
-import { createLogger, format, transports } from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
-const { combine, timestamp, label, printf } = format;
+import path from 'node:path';
+import pino from 'pino';
+import { envConfig } from '../config';
 
-//Custom Log Format
+const infoTargets: pino.TransportTargetOptions[] = [
+  {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      ignore: 'pid,hostname',
+      translateTime: 'SYS:mmm d, yyyy h:MM TT'
+    },
+  }
+];
 
-const myFormat = printf(({ level, message, label, timestamp }) => {
-  const date = new Date(timestamp);
-  const hour = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-  return `${date.toDateString()} ${hour}:${minutes}:${seconds} } [${label}] ${level}: ${message}`;
-});
+if (envConfig.node_env !== 'production') {
+  infoTargets.push({
+    target: 'pino-roll',
+    options: {
+      file: path.join(process.cwd(), 'logs', 'successes', 'success'),
+      size: '20m',
+      frequency: 'daily',
+      extension: '.log',
+      mkdir: true,
+    },
+  });
+}
 
-const logger = createLogger({
-  level: 'info',
-  format: combine(label({ label: 'Pastry Shop' }), timestamp(), myFormat),
-  transports: [
-    new transports.Console(),
-    new DailyRotateFile({
-      filename: path.join(
-        process.cwd(),
-        'logs',
-        'successes',
-        '%DATE%-success.log',
-      ),
-      datePattern: 'YYYY-DD-MM-HH',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-    }),
-  ],
-});
+const infoTransport = pino.transport({ targets: infoTargets });
 
-const errorLogger = createLogger({
-  level: 'error',
-  format: combine(label({ label: 'Pastry Shop' }), timestamp(), myFormat),
-  transports: [
-    new transports.Console(),
-    new DailyRotateFile({
-      filename: path.join(process.cwd(), 'logs', 'errors', '%DATE%-error.log'),
-      datePattern: 'YYYY-DD-MM-HH',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-    }),
-  ],
-});
+export const logger = pino(
+  {
+    level: 'info',
+    // base: { label: 'Pastry Shop' },
+  },
+  infoTransport
+);
 
-export { errorLogger, logger };
+// Define the transport for error logs
+const errorTargets: pino.TransportTargetOptions[] = [
+  {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      ignore: 'pid,hostname',
+      translateTime: 'SYS:mmm d, yyyy h:MM TT'
+    },
+  }
+];
+
+if (envConfig.node_env !== 'production') {
+  errorTargets.push({
+    target: 'pino-roll',
+    options: {
+      file: path.join(process.cwd(), 'logs', 'errors', 'error'),
+      size: '20m',
+      frequency: 'daily',
+      extension: '.log',
+      mkdir: true,
+    },
+  });
+}
+
+const errorTransport = pino.transport({ targets: errorTargets });
+
+export const errorLogger = pino(
+  {
+    level: 'error',
+    // base: { label: 'Pastry Shop' },
+  },
+  errorTransport
+);
+
+// Define the transport for HTTP server requests
+const serverTargets: pino.TransportTargetOptions[] = [
+  {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      ignore: 'pid,hostname',
+      translateTime: 'SYS:mmm d, yyyy h:MM TT'
+    },
+  }
+];
+
+if (envConfig.node_env !== 'production') {
+  serverTargets.push({
+    target: 'pino-roll',
+    options: {
+      file: path.join(process.cwd(), 'logs', 'server_logs', 'server'),
+      size: '20m',
+      frequency: 'daily',
+      extension: '.log',
+      mkdir: true,
+    },
+  });
+}
+
+const serverTransport = pino.transport({ targets: serverTargets });
+
+export const serverLogger = pino(
+  {
+    level: 'info',
+  },
+  serverTransport
+);
