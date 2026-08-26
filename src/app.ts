@@ -17,6 +17,7 @@ app.use(
   cors({
     origin: ['http://localhost:3000', 'https://karnival-kookies.netlify.app'],
     credentials: true,
+    exposedHeaders: ['x-access-token'],
   }),
 );
 app.use(cookieParser());

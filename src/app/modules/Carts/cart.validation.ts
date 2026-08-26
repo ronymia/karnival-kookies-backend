@@ -3,12 +3,12 @@ import { z } from 'zod';
 const createSchema = z.object({
   body: z.object({
     product_id: z
-      .number({ required_error: 'Product ID is required' })
+      .number({ message: 'Product ID is required' })
       .int()
       .nonnegative('Product can not be Negative Number'),
-    user_id: z.number({ required_error: 'User ID is required' }),
+    user_id: z.number({ message: 'User ID is required' }),
     quantity: z
-      .number({ required_error: 'Quantity is required' })
+      .number({ message: 'Quantity is required' })
       .int()
       .positive('Quantity must be a positive integer'),
   }),

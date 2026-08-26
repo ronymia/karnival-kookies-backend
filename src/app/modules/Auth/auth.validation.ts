@@ -5,9 +5,9 @@ import { userRole } from '../../../constants/user';
 const loginZodSchema = z.object({
   body: z.object({
     email: z
-      .string({ required_error: 'Email is required' })
+      .string({ message: 'Email is required' })
       .email({ message: 'Please Provide Valid Email Address' }),
-    password: z.string({ required_error: 'Password is required' }),
+    password: z.string({ message: 'Password is required' }),
   }),
 });
 
@@ -15,9 +15,9 @@ const loginZodSchema = z.object({
 const registerZodSchema = z.object({
   body: z.object({
     email: z
-      .string({ required_error: 'Email is required' })
+      .string({ message: 'Email is required' })
       .email({ message: 'Please Provide Valid Email Address' }),
-    password: z.string({ required_error: 'Password is required' }),
+    password: z.string({ message: 'Password is required' }),
     role: z.enum([...userRole] as [string, ...string[]]),
   }),
 });
@@ -26,7 +26,7 @@ const registerZodSchema = z.object({
 const refreshTokenZodSchema = z.object({
   cookie: z.object({
     refreshTokenZodSchema: z.string({
-      required_error: 'Refresh Token is required',
+      message: 'Refresh Token is required',
     }),
   }),
 });
@@ -35,10 +35,10 @@ const refreshTokenZodSchema = z.object({
 const changePasswordZodSchema = z.object({
   body: z.object({
     oldPassword: z.string({
-      required_error: 'Old password  is required',
+      message: 'Old password  is required',
     }),
     newPassword: z.string({
-      required_error: 'New password  is required',
+      message: 'New password  is required',
     }),
   }),
 });

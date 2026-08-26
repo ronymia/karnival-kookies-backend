@@ -107,7 +107,8 @@ const uploadProductImage: RequestHandler = catchAsync(
     // Access the files
     const files = req.files;
     if (!files || files.length === 0) {
-      return res.status(400).json({ message: 'No files uploaded' });
+      res.status(400).json({ message: 'No files uploaded' });
+      return;
     }
 
     const result = await ProductServices.uploadProductImage(files);

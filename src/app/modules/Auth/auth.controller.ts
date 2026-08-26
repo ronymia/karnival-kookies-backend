@@ -96,7 +96,7 @@ const getAccessToken: RequestHandler = catchAsync(
 // REFRESH TOKEN
 const refreshToken: RequestHandler = catchAsync(
   async (req: Request, res: Response) => {
-    const refresh_token = req.cookies;
+    const { refresh_token } = req.cookies;
 
     const result = await AuthServices.refreshToken(refresh_token);
 

@@ -112,11 +112,12 @@ const deletePackage: RequestHandler = catchAsync(
 );
 
 // UPLOAD FILES
-const uploadPackageFiles = async (req: Request, res: Response) => {
+const uploadPackageFiles = catchAsync(async (req: Request, res: Response) => {
   // Access the files
   const files = req.files;
   if (!files || files.length === 0) {
-    return res.status(400).json({ message: 'No files uploaded' });
+    res.status(400).json({ message: 'No files uploaded' });
+    return;
   }
 
   const result = await PackageServices.uploadPackageFiles(files);
@@ -128,7 +129,7 @@ const uploadPackageFiles = async (req: Request, res: Response) => {
     message: 'Package Files uploaded successfully',
     data: result,
   });
-};
+});
 
 export const PackageControllers = {
   createPackage,
