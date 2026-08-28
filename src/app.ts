@@ -21,8 +21,8 @@ app.use(
   }),
 );
 app.use(cookieParser());
-app.use(express.static('Images'));
-app.use('/', express.static(path.join(process.cwd(), 'Images')));
+app.use(express.static('public'));
+app.use('/', express.static(path.join(process.cwd(), 'public')));
 
 //parser
 app.use(express.json());

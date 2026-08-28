@@ -7,8 +7,7 @@ const seedSuperAdmin = async () => {
 
   let connection;
   try {
-    connection = await mysqlcreateConnection;
-
+    const pool = mysqlcreateConnection;
     logger.info(`Connected to database '${envConfig.db.db_database}'.`);
 
     const email = 'mdronymia040@gmail.com';
@@ -16,14 +15,14 @@ const seedSuperAdmin = async () => {
     const role = 'admin';
 
     // 1. Check if super_admin already exists
-    const [existingUsers]: any = await connection.query(
+    const [existingUsers]: any = await pool.query(
       'SELECT id FROM users WHERE email = ?',
       [email],
     );
 
     if (existingUsers.length > 0) {
       logger.info(`User with email '${email}' already exists. Skipping seed.`);
-      await connection.end();
+      await pool.end();
       return;
     }
 
@@ -33,7 +32,8 @@ const seedSuperAdmin = async () => {
 
     logger.info('Inserting superadmin into users table...');
 
-    // Start transaction
+    // Acquire connection for transaction
+    connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
@@ -62,13 +62,20 @@ const seedSuperAdmin = async () => {
     } catch (err) {
       await connection.rollback();
       throw err;
+    } finally {
+      connection.release();
     }
 
-    await connection.end();
+    await pool.end();
     process.exit(0);
   } catch (error) {
     errorLogger.error(error, 'Seeding failed:');
-    if (connection) await connection.end();
+    if (connection) {
+      try {
+        connection.release();
+      } catch (_) {}
+    }
+    await mysqlcreateConnection.end();
     process.exit(1);
   }
 };

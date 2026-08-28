@@ -73,7 +73,7 @@ router.post(
   '/upload-bulk-files',
   // verifyToken,
   // verifyAdmin,
-  dynamicFileUpload('files', 'Images/products'),
+  dynamicFileUpload('files', 'public/products'),
   ProductControllers.uploadProductImage,
 );
 

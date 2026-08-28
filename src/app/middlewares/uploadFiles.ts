@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
+import path from 'node:path';
 
 // CONFIGURE FILE UPLOADER
 const configureFileUpload = (fieldName: string, storageLocation: string) => {
@@ -35,7 +35,9 @@ const dynamicFileUpload = (fieldName: string, storageLocation: string) => {
         req.files = req.files.map((file: any) => ({
           ...file,
           file: path.posix.join(
-            storageLocation.replace(/^Images\//, ''), // Remove "Images/" prefix
+            storageLocation
+              .replace(/^public\//, '')
+              .replace(/^Images\//, ''), // Remove "public/" or "Images/" prefix
             file.filename,
           ), // Normalize the path
         }));

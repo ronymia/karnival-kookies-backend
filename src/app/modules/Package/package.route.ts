@@ -56,7 +56,7 @@ router.delete(
 router.post(
   '/upload-bulk-images',
   auth('admin', 'superAdmin'),
-  dynamicFileUpload('files', 'Images/packages'),
+  dynamicFileUpload('files', 'public/packages'),
   PackageControllers.uploadPackageFiles,
 );
 

@@ -6,7 +6,7 @@ const seedProductsAndPackages = async () => {
 
   let connection;
   try {
-    connection = await mysqlcreateConnection;
+    connection = mysqlcreateConnection;
 
     logger.info(`Connected to database '${envConfig.db.db_database}'.`);
 
@@ -46,7 +46,7 @@ const seedProductsAndPackages = async () => {
         price: 15.99,
         quantity: 50,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/chocolate_lava_cake.jpg']),
         description: 'Rich chocolate cake with a molten center.',
       },
       {
@@ -55,7 +55,7 @@ const seedProductsAndPackages = async () => {
         price: 18.5,
         quantity: 30,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/red_velvet_cake.jpg']),
         description: 'Classic red velvet with cream cheese frosting.',
       },
       {
@@ -64,7 +64,7 @@ const seedProductsAndPackages = async () => {
         price: 8.0,
         quantity: 40,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/cheesecake_slice.jpg']),
         description: 'Creamy New York style cheesecake.',
       },
       {
@@ -73,7 +73,7 @@ const seedProductsAndPackages = async () => {
         price: 12.0,
         quantity: 100,
         unit: 'bag',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/choco_chip_cookies.jpg']),
         description: 'Pack of 6 classic chocolate chip cookies.',
       },
       {
@@ -82,7 +82,7 @@ const seedProductsAndPackages = async () => {
         price: 10.0,
         quantity: 80,
         unit: 'bag',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/oatmeal_raisin_cookies.jpg']),
         description: 'Healthy and tasty oatmeal raisin cookies.',
       },
       {
@@ -91,7 +91,7 @@ const seedProductsAndPackages = async () => {
         price: 25.0,
         quantity: 20,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/macarons_box.jpg']),
         description: 'Assorted french macarons.',
       },
       {
@@ -100,7 +100,7 @@ const seedProductsAndPackages = async () => {
         price: 3.5,
         quantity: 50,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/croissant.jpg']),
         description: 'Buttery french croissant.',
       },
       {
@@ -109,7 +109,7 @@ const seedProductsAndPackages = async () => {
         price: 4.0,
         quantity: 40,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/danish_pastry.jpg']),
         description: 'Fruit filled danish pastry.',
       },
       {
@@ -118,7 +118,7 @@ const seedProductsAndPackages = async () => {
         price: 5.0,
         quantity: 100,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/iced_coffee.jpg']),
         description: 'Cold brew iced coffee.',
       },
       {
@@ -127,7 +127,7 @@ const seedProductsAndPackages = async () => {
         price: 6.5,
         quantity: 60,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['products/fruit_smoothie.jpg']),
         description: 'Fresh mixed berry smoothie.',
       },
     ];
@@ -166,7 +166,7 @@ const seedProductsAndPackages = async () => {
         discount_value: 10,
         quantity: 10,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['packages/family_feast_bundle.jpg']),
         description: 'A large cake, 12 cookies, and 4 drinks.',
       },
       {
@@ -176,7 +176,7 @@ const seedProductsAndPackages = async () => {
         discount_value: 15,
         quantity: 5,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['packages/birthday_party_pack.jpg']),
         description: 'Two cakes and a box of macarons.',
       },
       {
@@ -186,7 +186,7 @@ const seedProductsAndPackages = async () => {
         discount_value: 5,
         quantity: 20,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['packages/breakfast_combo.jpg']),
         description: 'Croissant + Coffee.',
       },
       {
@@ -196,7 +196,7 @@ const seedProductsAndPackages = async () => {
         discount_value: 15,
         quantity: 15,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['packages/cookie_lovers_box.jpg']),
         description: 'Assortment of 30 cookies.',
       },
       {
@@ -206,7 +206,7 @@ const seedProductsAndPackages = async () => {
         discount_value: 5,
         quantity: 8,
         unit: 'pcs',
-        images: JSON.stringify(['https://placehold.co/600x400/png']),
+        images: JSON.stringify(['packages/picnic_basket.jpg']),
         description: 'Sandwiches (not seeded), pastries, and drinks.',
       },
     ];
