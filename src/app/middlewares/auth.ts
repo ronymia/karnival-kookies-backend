@@ -11,17 +11,17 @@ const auth =
     try {
       //get authorization header
       const authHeader = req.headers.authorization;
-      if (!authHeader && !authHeader?.startsWith('Bearer ')) {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
       }
 
       //get authorization token
-      const token = authHeader?.split(' ')[1];
+      const token = authHeader.split(' ')[1];
       if (!token) {
         throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
       }
       // verify token
-      let verifiedUser = null;
+      let verifiedUser: any = null;
 
       try {
         verifiedUser = JwtHelpers.verifyToken(
@@ -32,21 +32,24 @@ const auth =
         if (err.name === 'TokenExpiredError') {
           const refresh_token = req.cookies?.refresh_token;
           if (!refresh_token) {
-            throw new AppError(httpStatus.UNAUTHORIZED, 'Token expired and no refresh token found');
+            throw new AppError(
+              httpStatus.UNAUTHORIZED,
+              'Token expired and no refresh token found',
+            );
           }
-          
+
           // Import here to avoid potential circular dependency issues at the top level
           const { AuthServices } = require('../modules/Auth/auth.service');
-          
+
           const result = await AuthServices.refreshToken(refresh_token);
           const newToken = result.accessToken;
-          
+
           // Expose the new access token in the response headers
           res.setHeader('x-access-token', newToken);
-          
+
           // Verify the new token to get the user payload
           verifiedUser = JwtHelpers.verifyToken(
-            token,
+            newToken,
             envConfig.jwt.access_token as Secret,
           );
         } else {
@@ -54,11 +57,20 @@ const auth =
         }
       }
 
-      req.user = verifiedUser; // role  , userId, email
+      req.user = verifiedUser; // role, userId, email
 
       // role based guard
-      if (requiredRoles.length && !requiredRoles.includes(verifiedUser.role)) {
-        throw new AppError(httpStatus.FORBIDDEN, 'Forbidden');
+      if (requiredRoles.length > 0) {
+        const normalizedUserRole = (verifiedUser.role || '')
+          .toLowerCase()
+          .replace(/_/g, '');
+        const normalizedRequiredRoles = requiredRoles.map((r) =>
+          r.toLowerCase().replace(/_/g, ''),
+        );
+
+        if (!normalizedRequiredRoles.includes(normalizedUserRole)) {
+          throw new AppError(httpStatus.FORBIDDEN, 'Forbidden');
+        }
       }
       next();
     } catch (error) {

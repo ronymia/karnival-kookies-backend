@@ -1,33 +1,15 @@
 import express from 'express';
-import verifyToken from '../../middlewares/verifyToken';
+import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { FaqValidations } from './faq.validation';
 import { FaqControllers } from './faq.controller';
 
 const router = express.Router();
 
-/***************
- * @api {post} /products
- * @apiDescription create a new product
- * @apiPermission  superAdmin , admin
- *
- * @apiHeader {string} => user's access token
- * @apiHeaderExample {json} Header-Example:
- *
- * @apiQuery {page}   [page=1] => List pages
- * @apiQuery {Number{1-100}}    [Limit=10] per page
- *
- *@apiSuccess {Object[]} Response=> data:product object
- *
- *@apiError {Unauthorized 401} => only authorized users can access this
- *@apiError {forbidden 403} => only only can access this
- *
- *********************/
-
 //  CREATE
 router.post(
   '/',
-  verifyToken,
+  auth('admin', 'superAdmin', 'super_admin'),
   validateRequest(FaqValidations.createSchema),
   FaqControllers.createFaq,
 );
@@ -38,12 +20,16 @@ router.get('/', FaqControllers.getAllFaq);
 //  UPDATE
 router.put(
   '/',
-  verifyToken,
+  auth('admin', 'superAdmin', 'super_admin'),
   validateRequest(FaqValidations.updateSchema),
   FaqControllers.updateFaq,
 );
 
 // DELETE
-router.delete('/:id', verifyToken, FaqControllers.deleteFaq);
+router.delete(
+  '/:id',
+  auth('admin', 'superAdmin', 'super_admin'),
+  FaqControllers.deleteFaq,
+);
 
 export const FaqRoutes = router;

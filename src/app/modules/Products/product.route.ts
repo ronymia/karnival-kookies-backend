@@ -29,7 +29,6 @@ const router = express.Router();
 //  CREATE
 router.post(
   '/',
-  verifyToken,
   verifyAdmin,
   // validateRequest(ProductValidations.createSchema),
   ProductControllers.createProduct,
@@ -49,13 +48,10 @@ router.get('/:id', ProductControllers.getProductById);
 //   GET RANDOM PRODUCT
 router.get('/get/random', ProductControllers.getRandomProduct);
 
-// UPLOAD PRODUCT IMAGES
-
 // UPDATE
 router.put(
   '/',
-  // verifyToken,
-  // verifyAdmin,
+  verifyAdmin,
   // validateRequest(ProductValidations.updateSchema),
   ProductControllers.updateProduct,
 );
@@ -63,7 +59,6 @@ router.put(
 // DELETE
 router.delete(
   '/:id',
-  verifyToken,
   verifyAdmin,
   ProductControllers.deleteProduct,
 );
@@ -71,8 +66,7 @@ router.delete(
 // UPLOAD PRODUCT FILES
 router.post(
   '/upload-bulk-files',
-  // verifyToken,
-  // verifyAdmin,
+  verifyAdmin,
   dynamicFileUpload('files', 'public/products'),
   ProductControllers.uploadProductImage,
 );

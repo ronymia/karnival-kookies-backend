@@ -19,7 +19,7 @@ const registerUser = async (payload: IRegisterUser) => {
     name,
     email,
     password,
-    role,
+    role = ENUM_USER_ROLE.CUSTOMER,
     phone,
     address,
     country,
@@ -29,13 +29,13 @@ const registerUser = async (payload: IRegisterUser) => {
     gender,
   } = payload;
 
-  // CHECKING USER EXISTENT
+  // CHECKING USER EXISTENCE
   const [existAccount] = await pool.query<RowDataPacket[]>(
     'SELECT * FROM users WHERE email = ?',
     [email],
   );
 
-  // IF EMAIL ALREADY REGISTER THEN THROW ERROR
+  // IF EMAIL ALREADY REGISTERED THEN THROW ERROR
   if (existAccount.length > 0) {
     throw new AppError(
       httpStatus.CONFLICT,
@@ -43,82 +43,94 @@ const registerUser = async (payload: IRegisterUser) => {
     );
   }
 
+  // HASH USER PASSWORD
+  const hashedPassword = await PasswordHelpers.passwordHash(password);
+
   // GENERATE 4 DIGIT EMAIL VERIFICATION CODE
   const verificationCode = await generateCode();
   const hashedVerificationCode = await PasswordHelpers.passwordHash(
     verificationCode.toString(),
   );
 
+  // FORMAT DATE OF BIRTH
+  const formattedDob = date_of_birth
+    ? moment(date_of_birth, ['YYYY-MM-DD', 'DD-MM-YYYY']).isValid()
+      ? moment(date_of_birth, ['YYYY-MM-DD', 'DD-MM-YYYY']).format('YYYY-MM-DD')
+      : moment().format('YYYY-MM-DD')
+    : moment().format('YYYY-MM-DD');
+
   // START TRANSACTION
   const connection = await pool.getConnection();
   try {
-    // START TRANSACTION
     await connection.beginTransaction();
 
     // CREATE USER ON DATABASE
-    const [createdUser] = await pool.query<ResultSetHeader>(
+    const [createdUser] = await connection.query<ResultSetHeader>(
       'INSERT INTO users (email, password, role, code) VALUES (?, ?, ?, ?)',
-      [email, password, role, hashedVerificationCode],
+      [email, hashedPassword, role, hashedVerificationCode],
     );
 
     if (!createdUser?.insertId) {
-      // ROLLBACK TRANSACTION
       await connection.rollback();
       throw new AppError(httpStatus.BAD_REQUEST, 'User Not Created');
-    } else if (createdUser?.insertId) {
-      // CREATE USER PROFILE ON DATABASE
-      const [result] = await connection.query<ResultSetHeader>(
-        'INSERT INTO profiles (user_id, name,  phone, address, country, city, postcode, date_of_birth, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          createdUser.insertId,
-          name,
-          phone,
-          address,
-          country,
-          city,
-          postcode,
-          moment(date_of_birth, 'DD-MM-YYYY').format('YYYY-MM-DD'),
-          gender,
-        ],
-      );
-      // USER NOT CREATED
-      if (!result.insertId) {
-        // ROLLBACK TRANSACTION
-        await connection.rollback();
-        throw new AppError(httpStatus.BAD_REQUEST, 'User Not Created');
-      }
-
-      /* <------------------ IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL ------------------> */
-      if (createdUser?.insertId && role === ENUM_USER_ROLE.CUSTOMER) {
-        try {
-          await EmailHelpers.emailVerification({
-            name: '',
-            email,
-            code: verificationCode,
-          });
-
-          // IF USER UNVERIFIED
-          return {
-            accessToken: null,
-            refreshToken: null,
-            user: {
-              id: createdUser?.insertId,
-              role: role,
-              email: email,
-              is_email_verified: 0,
-            },
-          };
-        } catch (err) {
-          throw new AppError(
-            httpStatus.INTERNAL_SERVER_ERROR,
-            'Failed to send verification email',
-          );
-        }
-      }
-
-      // COMMIT TRANSACTION
-      await connection.commit();
     }
+
+    // CREATE USER PROFILE ON DATABASE
+    const [result] = await connection.query<ResultSetHeader>(
+      'INSERT INTO profiles (user_id, name, phone, address, country, city, postcode, date_of_birth, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        createdUser.insertId,
+        name || '',
+        phone || null,
+        address || null,
+        country || null,
+        city || null,
+        postcode || null,
+        formattedDob,
+        gender || 'other',
+      ],
+    );
+
+    if (!result.insertId) {
+      await connection.rollback();
+      throw new AppError(httpStatus.BAD_REQUEST, 'Profile Not Created');
+    }
+
+    // COMMIT TRANSACTION FIRST
+    await connection.commit();
+
+    /* <------------------ IF USER CREATED THEN SEND VERIFICATION TO USER REGISTER EMAIL ------------------> */
+    if (role === ENUM_USER_ROLE.CUSTOMER) {
+      try {
+        await EmailHelpers.emailVerification({
+          name: name || '',
+          email,
+          code: verificationCode,
+        });
+      } catch (err) {
+        errorLogger.error(err, 'Failed to send verification email');
+      }
+
+      // IF USER UNVERIFIED
+      return {
+        accessToken: null,
+        refreshToken: null,
+        user: {
+          id: createdUser.insertId,
+          role,
+          email,
+          is_email_verified: 0,
+        },
+      };
+    }
+
+    return {
+      id: createdUser.insertId,
+      name,
+      email,
+      role,
+      phone,
+    };
   } catch (error) {
     // ROLLBACK TRANSACTION
     await connection.rollback();
@@ -127,31 +139,6 @@ const registerUser = async (payload: IRegisterUser) => {
     // RELEASE CONNECTION
     connection.release();
   }
-
-  // if (role !== ENUM_USER_ROLE.CUSTOMER) {
-  //   return { id: result?.id, name, email, role, phone };
-  // }
-
-  // // ACCESS TOKEN
-  // const accessToken = JwtHelpers.createToken(
-  //   { email, role },
-  //   envConfig.jwt.access_token as Secret,
-  //   envConfig.jwt.access_token_expires_in as string,
-  // );
-
-  // // REFRESH TOKEN
-  // const refreshToken = JwtHelpers.createToken(
-  //   { email, role },
-  //   envConfig.jwt.refresh_token as Secret,
-  //   envConfig.jwt.refresh_token_expires_in as string,
-  // );
-
-  // // RETURN TO CONTROLLER
-  // return {
-  //   accessToken,
-  //   refreshToken,
-  //   user: { id: result[0]?.insertId, email, role },
-  // };
 };
 
 // USER LOGIN

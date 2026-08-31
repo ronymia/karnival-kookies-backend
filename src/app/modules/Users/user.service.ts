@@ -5,6 +5,7 @@ import { TPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelpers } from '../../../helpers/paginationHelpers';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import moment from 'moment';
+import { PasswordHelpers } from '../../../helpers/passwordHelpers';
 
 // CREATE USER
 const createUser = async (payload: any) => {
@@ -12,7 +13,7 @@ const createUser = async (payload: any) => {
     name,
     email,
     password,
-    role,
+    role = 'customer',
     phone,
     address,
     country,
@@ -32,42 +33,57 @@ const createUser = async (payload: any) => {
     throw new AppError(httpStatus.CONFLICT, 'Email Already Taken');
   }
 
+  // HASH PASSWORD IF NOT ALREADY HASHED
+  let hashedPassword = password;
+  if (password && !password.startsWith('$2b$') && !password.startsWith('$2a$')) {
+    hashedPassword = await PasswordHelpers.passwordHash(password);
+  }
+
+  // SAFE DATE OF BIRTH
+  const formattedDob =
+    date_of_birth && typeof date_of_birth === 'string' && date_of_birth.trim() !== ''
+      ? moment(date_of_birth, ['YYYY-MM-DD', 'DD-MM-YYYY', moment.ISO_8601]).isValid()
+        ? moment(date_of_birth, ['YYYY-MM-DD', 'DD-MM-YYYY', moment.ISO_8601]).format('YYYY-MM-DD')
+        : '1990-01-01'
+      : '1990-01-01';
+
+  const userGender = gender || 'other';
+
   const connection = await pool.getConnection();
   try {
     // START TRANSACTION
     await connection.beginTransaction();
+
     // CREATE USER ON DATABASE
     const [createdUser] = await connection.query<ResultSetHeader>(
-      'INSERT INTO users ( email, password, role, is_email_verified) VALUES (?, ?, ?, ?)',
-      [email, password, role, true],
+      'INSERT INTO users (email, password, role, is_email_verified) VALUES (?, ?, ?, ?)',
+      [email, hashedPassword, role, true],
     );
 
     if (!createdUser.insertId) {
-      // ROLLBACK TRANSACTION
       await connection.rollback();
       throw new AppError(httpStatus.BAD_REQUEST, 'User Not Created');
-    } else if (createdUser.insertId) {
-      // CREATE USER PROFILE ON DATABASE
-      const [result] = await connection.query<ResultSetHeader>(
-        'INSERT INTO profiles (user_id, name,  phone, address, country, city, postcode, date_of_birth, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          createdUser.insertId,
-          name,
-          phone,
-          address,
-          country,
-          city,
-          postcode,
-          moment(date_of_birth, 'DD-MM-YYYY').format('YYYY-MM-DD'),
-          gender,
-        ],
-      );
-      // USER NOT CREATED
-      if (!result.insertId) {
-        // ROLLBACK TRANSACTION
-        await connection.rollback();
-        throw new AppError(httpStatus.BAD_REQUEST, 'User Not Created');
-      }
+    }
+
+    // CREATE USER PROFILE ON DATABASE
+    const [result] = await connection.query<ResultSetHeader>(
+      'INSERT INTO profiles (user_id, name, phone, address, country, city, postcode, date_of_birth, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        createdUser.insertId,
+        name || '',
+        phone || null,
+        address || null,
+        country || null,
+        city || null,
+        postcode || null,
+        formattedDob,
+        userGender,
+      ],
+    );
+
+    if (!result.insertId) {
+      await connection.rollback();
+      throw new AppError(httpStatus.BAD_REQUEST, 'Profile Not Created');
     }
 
     // COMMIT TRANSACTION
@@ -78,15 +94,14 @@ const createUser = async (payload: any) => {
       id: createdUser.insertId,
       name,
       email,
-      password,
       role,
       phone,
       address,
       country,
       city,
       postcode,
-      date_of_birth,
-      gender,
+      date_of_birth: formattedDob,
+      gender: userGender,
     };
   } catch (error) {
     // ROLLBACK TRANSACTION
@@ -159,7 +174,7 @@ const getAllUsers = async (
       ...item,
       profile: {
         ...item.profile,
-        date_of_birth: item.profile.date_of_birth
+        date_of_birth: item.profile?.date_of_birth
           ? moment(item.profile.date_of_birth, 'YYYY-MM-DD').format(
               'DD-MM-YYYY',
             )
@@ -183,6 +198,7 @@ const updateUser = async (payload: any, userId: number) => {
     postcode,
     date_of_birth,
     gender,
+    status,
   } = payload;
 
   const connection = await pool.getConnection();
@@ -190,9 +206,14 @@ const updateUser = async (payload: any, userId: number) => {
     // START TRANSACTION
     await connection.beginTransaction();
 
-    // CHECK IF USER EXISTS
+    // CHECK IF USER EXISTS AND FETCH EXISTING PROFILE
     const [userRows] = await connection.query<RowDataPacket[]>(
-      'SELECT * FROM users WHERE id = ?',
+      `SELECT u.*, p.id as profile_id, p.name as profile_name, p.phone as profile_phone, 
+              p.address as profile_address, p.country as profile_country, p.city as profile_city, 
+              p.postcode as profile_postcode, p.date_of_birth as profile_dob, p.gender as profile_gender 
+       FROM users u 
+       LEFT JOIN profiles p ON u.id = p.user_id 
+       WHERE u.id = ?`,
       [userId],
     );
 
@@ -200,8 +221,10 @@ const updateUser = async (payload: any, userId: number) => {
       throw new AppError(httpStatus.NOT_FOUND, 'User Not Found');
     }
 
+    const existing = userRows[0];
+
     // CHECK IF EMAIL IS TAKEN (EXCLUDING CURRENT USER)
-    if (email) {
+    if (email && email !== existing.email) {
       const [emailRows] = await connection.query<RowDataPacket[]>(
         'SELECT * FROM users WHERE email = ? AND id != ?',
         [email, userId],
@@ -211,40 +234,90 @@ const updateUser = async (payload: any, userId: number) => {
       }
     }
 
-    // UPDATE USERS TABLE
-    const userUpdateQuery = `
-      UPDATE users 
-      SET email = ?, 
-          password = ?, 
-          role = ?
-      WHERE id = ?
-    `;
-    await connection.query(userUpdateQuery, [email, password, role, userId]);
+    // PREPARE UPDATED USER FIELDS
+    const updatedEmail = email || existing.email;
+    const updatedRole = role || existing.role;
+    const updatedStatus = status || existing.status;
 
-    // UPDATE PROFILES TABLE
-    const profileUpdateQuery = `
-      UPDATE profiles 
-      SET name = ?, 
-          phone = ?, 
-          address = ?, 
-          country = ?, 
-          city = ?, 
-          postcode = ?, 
-          date_of_birth = ?, 
-          gender = ?
-      WHERE user_id = ?
-    `;
-    await connection.query(profileUpdateQuery, [
-      name,
-      phone,
-      address,
-      country,
-      city,
-      postcode,
-      moment(date_of_birth, 'DD-MM-YYYY').format('YYYY-MM-DD'),
-      gender,
-      userId,
-    ]);
+    let updatedPassword = existing.password;
+    if (password && typeof password === 'string' && password.trim() !== '') {
+      updatedPassword = await PasswordHelpers.passwordHash(password);
+    }
+
+    // UPDATE USERS TABLE
+    await connection.query(
+      `UPDATE users 
+       SET email = ?, 
+           password = ?, 
+           role = ?,
+           status = ?
+       WHERE id = ?`,
+      [updatedEmail, updatedPassword, updatedRole, updatedStatus, userId],
+    );
+
+    // PREPARE UPDATED PROFILE FIELDS
+    const updatedName = name !== undefined && name !== null ? name : (existing.profile_name || '');
+    const updatedPhone = phone !== undefined ? (phone || null) : existing.profile_phone;
+    const updatedAddress = address !== undefined ? (address || null) : existing.profile_address;
+    const updatedCountry = country !== undefined ? (country || null) : existing.profile_country;
+    const updatedCity = city !== undefined ? (city || null) : existing.profile_city;
+    const updatedPostcode = postcode !== undefined ? (postcode || null) : existing.profile_postcode;
+    const updatedGender = gender ? gender : (existing.profile_gender || 'other');
+
+    // SAFE DATE OF BIRTH
+    let formattedDob = existing.profile_dob
+      ? moment(existing.profile_dob).format('YYYY-MM-DD')
+      : '1990-01-01';
+
+    if (date_of_birth && typeof date_of_birth === 'string' && date_of_birth.trim() !== '') {
+      if (moment(date_of_birth, ['YYYY-MM-DD', 'DD-MM-YYYY', moment.ISO_8601]).isValid()) {
+        formattedDob = moment(date_of_birth, ['YYYY-MM-DD', 'DD-MM-YYYY', moment.ISO_8601]).format('YYYY-MM-DD');
+      }
+    }
+
+    // UPSERT PROFILES TABLE
+    if (existing.profile_id) {
+      await connection.query(
+        `UPDATE profiles 
+         SET name = ?, 
+             phone = ?, 
+             address = ?, 
+             country = ?, 
+             city = ?, 
+             postcode = ?, 
+             date_of_birth = ?, 
+             gender = ?
+         WHERE user_id = ?`,
+        [
+          updatedName,
+          updatedPhone,
+          updatedAddress,
+          updatedCountry,
+          updatedCity,
+          updatedPostcode,
+          formattedDob,
+          updatedGender,
+          userId,
+        ],
+      );
+    } else {
+      await connection.query(
+        `INSERT INTO profiles 
+         (user_id, name, phone, address, country, city, postcode, date_of_birth, gender)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          updatedName,
+          updatedPhone,
+          updatedAddress,
+          updatedCountry,
+          updatedCity,
+          updatedPostcode,
+          formattedDob,
+          updatedGender,
+        ],
+      );
+    }
 
     // COMMIT TRANSACTION
     await connection.commit();
@@ -252,16 +325,17 @@ const updateUser = async (payload: any, userId: number) => {
     // RETURN UPDATED USER
     return {
       id: userId,
-      name,
-      email,
-      role,
-      phone,
-      address,
-      country,
-      city,
-      postcode,
-      date_of_birth,
-      gender,
+      name: updatedName,
+      email: updatedEmail,
+      role: updatedRole,
+      status: updatedStatus,
+      phone: updatedPhone,
+      address: updatedAddress,
+      country: updatedCountry,
+      city: updatedCity,
+      postcode: updatedPostcode,
+      date_of_birth: formattedDob,
+      gender: updatedGender,
     };
   } catch (error) {
     // ROLLBACK TRANSACTION
