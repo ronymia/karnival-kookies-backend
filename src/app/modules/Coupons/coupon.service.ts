@@ -5,24 +5,36 @@ import { paginationHelpers } from '../../../helpers/paginationHelpers';
 
 // CREATE
 const createCoupon = async (payload: any) => {
-  const { code, discount_type, discount_value, minimum_spend } = payload;
-  // Insert new category
+  const {
+    campaign_id,
+    code,
+    discount_type,
+    discount_value,
+    minimum_spend,
+    is_active = true,
+  } = payload;
+
   const [result] = await pool.query<ResultSetHeader>(
-    'INSERT INTO coupons (code, discount_type, discount_value, minimum_spend) VALUES (?, ?, ?, ?)',
+    `INSERT INTO coupons (campaign_id, code, discount_type, discount_value, minimum_spend, is_active) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
     [
-      code,
-      discount_type,
-      parseFloat(discount_value),
-      parseFloat(minimum_spend),
+      campaign_id || null,
+      code.trim().toUpperCase(),
+      discount_type || null,
+      discount_value !== undefined && discount_value !== null ? parseFloat(discount_value) : null,
+      minimum_spend !== undefined && minimum_spend !== null ? parseFloat(minimum_spend) : null,
+      is_active,
     ],
   );
 
   return {
     id: result.insertId,
-    code,
+    campaign_id,
+    code: code.trim().toUpperCase(),
     discount_type,
-    discount_value: parseFloat(discount_value),
-    minimum_spend: parseFloat(minimum_spend),
+    discount_value,
+    minimum_spend,
+    is_active,
   };
 };
 
@@ -36,98 +48,142 @@ const getAllCoupons = async (
     paginationHelpers.calculatePagination(paginationOptions);
 
   // GENERATE QUERY
-  let query = `SELECT * FROM coupons `;
+  let query = `
+    SELECT cp.*,
+           c.title as campaign_title,
+           c.campaign_type,
+           c.trigger_type,
+           c.start_date as campaign_start_date,
+           c.end_date as campaign_end_date,
+           c.is_active as campaign_active
+    FROM coupons cp
+    LEFT JOIN campaigns c ON cp.campaign_id = c.id
+  `;
 
   // GENERATE WHERE QUERY
-  let whereQuery = '';
-  if (Object.keys(filters).length > 0) {
-    whereQuery = Object.keys(filters)
-      .map((key) => `${key} = ?`)
-      .join(' AND ');
+  const conditions: string[] = [];
+  const queryParams: any[] = [];
+
+  if (filters.code) {
+    conditions.push(`cp.code LIKE ?`);
+    queryParams.push(`%${filters.code}%`);
+  }
+  if (filters.campaign_id) {
+    conditions.push(`cp.campaign_id = ?`);
+    queryParams.push(filters.campaign_id);
+  }
+  if (filters.is_active !== undefined) {
+    conditions.push(`cp.is_active = ?`);
+    queryParams.push(filters.is_active);
   }
 
-  if (whereQuery) {
-    query += ` WHERE ${whereQuery}`;
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`;
   }
 
   // SORT QUERY
   if (sortBy && sortOrder) {
-    query += ` ORDER BY ${sortBy} ${sortOrder}`;
+    query += ` ORDER BY cp.${sortBy} ${sortOrder}`;
+  } else {
+    query += ` ORDER BY cp.created_at DESC`;
   }
 
   // LIMIT QUERY
   if (limit && page) {
-    query += ` LIMIT ${limit} OFFSET ${offset}`;
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(Number(limit), offset);
   }
 
   // EXECUTE THE QUERY
-  const [coupons] = await pool.query<RowDataPacket[]>(query, [
-    ...Object.values(filters),
-  ]);
+  const [coupons] = await pool.query<RowDataPacket[]>(query, queryParams);
 
-  // Get the total count of meta_data entries
+  // Get total count
+  const countQueryParams = queryParams.slice(0, queryParams.length - (limit && page ? 2 : 0));
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
   const [totalCouponsResult] = await pool.query<RowDataPacket[]>(
-    'SELECT COUNT(*) as count FROM coupons',
+    `SELECT COUNT(*) as count FROM coupons cp ${whereClause}`,
+    countQueryParams,
   );
 
   // SEND TO CONTROLLER
   return {
     meta: {
-      current_page: page,
-      limit,
-      total_pages:
-        Math.ceil(totalCouponsResult[0]?.count / limit! || 0) || null,
-      total: totalCouponsResult[0]?.count,
+      current_page: Number(page),
+      limit: Number(limit),
+      total_pages: Math.ceil((totalCouponsResult[0]?.count || 0) / Number(limit)) || null,
+      total: totalCouponsResult[0]?.count || 0,
     },
     data: coupons,
   };
 };
 
-//  GET META DATA BY ID
+// GET BY ID
 const getCouponCodeById = async (id: number): Promise<any> => {
   const [result] = await pool.query<RowDataPacket[]>(
-    'SELECT * FROM coupons WHERE id = ?',
+    `SELECT cp.*,
+            c.title as campaign_title,
+            c.campaign_type,
+            c.trigger_type,
+            c.start_date as campaign_start_date,
+            c.end_date as campaign_end_date,
+            c.is_active as campaign_active
+     FROM coupons cp
+     LEFT JOIN campaigns c ON cp.campaign_id = c.id
+     WHERE cp.id = ?`,
     [Number(id)],
   );
 
-  return result;
+  return result[0] || null;
 };
 
-//UPDATE
+// UPDATE
 const updateCoupon = async (payload: any) => {
-  // EXTRACT
-  const { id, code, discount_type, discount_value, minimum_spend } = payload;
+  const { id, campaign_id, code, discount_type, discount_value, minimum_spend, is_active } = payload;
 
-  // EXECUTE THE QUERY
-  const [result] = await pool.query<ResultSetHeader>(
-    'UPDATE coupons SET code = ?, discount_type = ?, discount_value = ?, minimum_spend = ? WHERE id = ?',
-    [
-      code,
-      discount_type,
-      parseFloat(discount_value),
-      parseFloat(minimum_spend),
-      id,
-    ],
-  );
+  const fields: string[] = [];
+  const values: any[] = [];
 
-  return result;
+  if (code !== undefined) {
+    fields.push('code = ?');
+    values.push(code.trim().toUpperCase());
+  }
+  if (campaign_id !== undefined) {
+    fields.push('campaign_id = ?');
+    values.push(campaign_id);
+  }
+  if (discount_type !== undefined) {
+    fields.push('discount_type = ?');
+    values.push(discount_type);
+  }
+  if (discount_value !== undefined) {
+    fields.push('discount_value = ?');
+    values.push(discount_value !== null ? parseFloat(discount_value) : null);
+  }
+  if (minimum_spend !== undefined) {
+    fields.push('minimum_spend = ?');
+    values.push(minimum_spend !== null ? parseFloat(minimum_spend) : null);
+  }
+  if (is_active !== undefined) {
+    fields.push('is_active = ?');
+    values.push(is_active);
+  }
+
+  if (fields.length > 0) {
+    values.push(id);
+    await pool.query(`UPDATE coupons SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  return await getCouponCodeById(id);
 };
 
-//DELETE
+// DELETE
 const deleteCoupon = async (ids: number[]) => {
-  // GENERATE PLACEHOLDER FOR QUERY
   const placeholders = ids.map(() => '?');
-
-  // DELETE QUERY
   const query = `DELETE FROM coupons WHERE id IN (${placeholders})`;
-
-  // EXECUTE QUERY
   const [result] = await pool.query<ResultSetHeader>(query, ids);
-
   return result;
 };
 
-//
 export const CouponServices = {
   createCoupon,
   updateCoupon,

@@ -29,6 +29,7 @@ export const envConfig = {
   stripe:{
     key: process.env.STRIPE_SECRET_KEY,
     public_key: process.env.STRIPE_PUBLISHABLE_KEY,
+    webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
   },
   jwt: {
     access_token: process.env.ACCESS_TOKEN,
@@ -38,6 +39,9 @@ export const envConfig = {
   },
   defaultPassword:{
     default_admin_pass: process.env.DEFAULT_ADMIN_PASS,
+  },
+  rabbitmq: {
+    url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
   },
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
 };

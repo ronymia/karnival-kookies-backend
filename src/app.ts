@@ -25,7 +25,13 @@ app.use(express.static('public'));
 app.use('/', express.static(path.join(process.cwd(), 'public')));
 
 //parser
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 
 // Http Request Logger

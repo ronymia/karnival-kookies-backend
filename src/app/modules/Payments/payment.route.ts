@@ -31,12 +31,25 @@ router.get(
   //   validateRequest(CartValidations.createSchema),
   PaymentControllers.stripeConfig,
 );
-//  CREATE NEW CART
+//  CREATE NEW PAYMENT INTENT
 router.post(
   '/create-payment-intent',
   verifyToken,
   validateRequest(PaymentValidations.createSchema),
   PaymentControllers.paymentIntent,
+);
+
+// PROCEED PAYMENT (OPTION B)
+router.post(
+  '/proceed',
+  verifyToken,
+  PaymentControllers.proceedPayment,
+);
+
+// STRIPE WEBHOOK (Called directly by Stripe servers)
+router.post(
+  '/webhook',
+  PaymentControllers.handleWebhook,
 );
 
 export const PaymentRoutes = router;

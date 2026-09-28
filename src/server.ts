@@ -3,19 +3,32 @@ import app from './app';
 import { errorLogger, logger } from './shared/logger';
 import 'dotenv/config';
 import { envConfig, mysqlcreateConnection } from './config';
+import { closeRabbitMQ, connectRabbitMQ } from './config/rabbitmq.config';
+import { startPaymentConsumer } from './app/modules/Payments/payment.consumer';
 
-(async ()=> {
+(async () => {
   // SERVER LISTENING PORT
   const server: Server = app.listen(envConfig.port, () => {
     logger.info(`Server running on port ${envConfig.port}`);
   });
 
-  mysqlcreateConnection.getConnection()
+  // MySQL Connection
+  mysqlcreateConnection
+    .getConnection()
     .then((connection) => {
       logger.info('Database connection successful');
       connection.release();
     })
     .catch((err) => errorLogger.error(err, 'Database connection error'));
+
+  // RabbitMQ Connection & Payment Consumer Worker (Architecture A)
+  connectRabbitMQ()
+    .then((rmq) => {
+      if (rmq) {
+        startPaymentConsumer();
+      }
+    })
+    .catch((err) => errorLogger.error(err, 'RabbitMQ initialization error'));
 
   // Graceful shutdown function
   const exitHandler = async () => {
@@ -32,6 +45,10 @@ import { envConfig, mysqlcreateConnection } from './config';
         });
       });
     }
+
+    // Gracefully close RabbitMQ
+    await closeRabbitMQ();
+
     process.exit(1);
   };
 

@@ -1,0 +1,23 @@
+CREATE TABLE campaigns (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    campaign_type ENUM('discount', 'free_shipping', 'bogo_same', 'bogo_different', 'free_item') NOT NULL,
+    trigger_type ENUM('automatic', 'coupon') NOT NULL DEFAULT 'automatic',
+    minimum_spend DECIMAL(10, 2) DEFAULT NULL,
+    buy_product_id INT DEFAULT NULL,
+    buy_quantity INT DEFAULT 1,
+    discount_type ENUM('percent', 'fixed') DEFAULT NULL,
+    discount_value DECIMAL(10, 2) DEFAULT NULL,
+    get_product_id INT DEFAULT NULL,
+    get_quantity INT DEFAULT 1,
+    start_date DATETIME DEFAULT NULL,
+    end_date DATETIME DEFAULT NULL,
+    is_active BOOLEAN DEFAULT 1,
+    max_uses_total INT DEFAULT NULL,
+    max_uses_per_user INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (buy_product_id) REFERENCES products (id) ON DELETE SET NULL,
+    FOREIGN KEY (get_product_id) REFERENCES products (id) ON DELETE SET NULL
+);

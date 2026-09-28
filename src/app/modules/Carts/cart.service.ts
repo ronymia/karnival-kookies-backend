@@ -98,9 +98,31 @@ const updateQuantityOfCartProduct = async (payload: any): Promise<any> => {
 
 // CART CHECKOUT
 const cartCheckOut = async (payload: any) => {
-  const { user_id, order_items, shipping_info, payment } = payload;
+  const {
+    user_id,
+    order_items,
+    shipping_info,
+    payment,
+    coupon_code,
+    campaign_id,
+    free_shipping = false,
+  } = payload;
+
   const order_number = GenerateTrackingAndOrderId.generateOrderId();
   const tracking_number = GenerateTrackingAndOrderId.generateTrackingNumber();
+
+  const calculatedNetAmount = order_items.reduce(
+    (sum: number, item: any) => sum + Number(item.price) * Number(item.quantity),
+    0,
+  );
+  const net_amount =
+    payload.net_amount !== undefined ? Number(payload.net_amount) : calculatedNetAmount;
+  const discount_amount =
+    payload.discount_amount !== undefined ? Number(payload.discount_amount) : 0;
+  const total_amount =
+    payload.total_amount !== undefined
+      ? Number(payload.total_amount)
+      : Math.max(0, net_amount - discount_amount);
 
   let connection;
 
@@ -108,12 +130,42 @@ const cartCheckOut = async (payload: any) => {
     connection = await pool.getConnection();
     await connection.beginTransaction(); // Start transaction
 
-    // Insert order
+    // Insert order with amounts and campaign data
     const [orderResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO orders (user_id,order_number, tracking_number) VALUES (?, ?, ?)`,
-      [user_id, order_number, tracking_number],
+      `INSERT INTO orders (
+        user_id, order_number, tracking_number,
+        net_amount, discount_amount, total_amount,
+        coupon_code, campaign_id, free_shipping
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        user_id,
+        order_number,
+        tracking_number,
+        net_amount,
+        discount_amount,
+        total_amount,
+        coupon_code || null,
+        campaign_id || null,
+        free_shipping ? 1 : 0,
+      ],
     );
     const order_id = orderResult.insertId; // Get last inserted order ID
+
+    // If campaign was applied, record in coupon_usages
+    if (campaign_id) {
+      let couponId = null;
+      if (coupon_code) {
+        const [cRows] = await connection.query<RowDataPacket[]>(
+          `SELECT id FROM coupons WHERE code = ?`,
+          [coupon_code.trim().toUpperCase()],
+        );
+        if (cRows.length > 0) couponId = cRows[0].id;
+      }
+      await connection.execute(
+        `INSERT INTO coupon_usages (campaign_id, coupon_id, user_id, order_id) VALUES (?, ?, ?, ?)`,
+        [campaign_id, couponId, user_id, order_id],
+      );
+    }
 
     // Insert order items
     const orderItemsValues = order_items.map((item: any) => [

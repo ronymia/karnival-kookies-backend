@@ -1,5 +1,6 @@
 import express from 'express';
 import { AuthRoutes } from '../modules/Auth/auth.route';
+import { CampaignRoutes } from '../modules/Campaigns/campaign.route';
 import { CartRoutes } from '../modules/Carts/cart.route';
 import { CategoryRoutes } from '../modules/Categories/categories.route';
 import { CouponRoutes } from '../modules/Coupons/coupon.route';
@@ -19,6 +20,10 @@ const router = express.Router();
 
 const moduleRoutes = [
   // ... routes
+  {
+    path: '/v1.0/campaigns',
+    route: CampaignRoutes,
+  },
   {
     path: '/v1.0/auth',
     route: AuthRoutes,

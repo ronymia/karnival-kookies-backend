@@ -38,4 +38,40 @@ const paymentIntent: RequestHandler = catchAsync(
   },
 );
 
-export const PaymentControllers = { stripeConfig, paymentIntent };
+// PROCEED PAYMENT (OPTION B)
+const proceedPayment: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const payload = req.body;
+    if (!payload.user_id && req.user?.id) {
+      payload.user_id = req.user.id;
+    }
+
+    const result = await PaymentServices.proceedPayment(payload);
+
+    sendResponse<any>(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: 'Payment proceeded successfully',
+      data: result,
+    });
+  },
+);
+
+// HANDLE STRIPE WEBHOOK
+const handleWebhook: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const signature = req.headers['stripe-signature'] as string;
+    const rawBody = (req as any).rawBody || req.body;
+
+    const result = await PaymentServices.handleWebhook(rawBody, signature);
+
+    res.status(httpStatus.OK).json(result);
+  },
+);
+
+export const PaymentControllers = {
+  stripeConfig,
+  paymentIntent,
+  proceedPayment,
+  handleWebhook,
+};

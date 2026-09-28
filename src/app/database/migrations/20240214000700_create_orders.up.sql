@@ -3,6 +3,12 @@ CREATE TABLE orders (
     user_id INT NOT NULL,
     order_number VARCHAR(50) NOT NULL UNIQUE,
     tracking_number VARCHAR(255) NOT NULL,
+    net_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    coupon_code VARCHAR(100) DEFAULT NULL,
+    campaign_id INT DEFAULT NULL,
+    free_shipping BOOLEAN DEFAULT 0,
     status ENUM(
         'pending',
         'confirmed',

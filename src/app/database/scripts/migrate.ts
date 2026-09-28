@@ -1,14 +1,24 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { mysqlcreateConnection } from '../../../config';
+import mysql from 'mysql2/promise';
+import { envConfig } from '../../../config/env.config';
 import { logger, errorLogger } from '../../../shared/logger';
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'src/app/database/migrations');
 
 async function migrate() {
-  const connection = await mysqlcreateConnection;
+  let connection;
 
   try {
+    connection = await mysql.createConnection({
+      host: envConfig.db.db_host,
+      user: envConfig.db.db_username,
+      password: envConfig.db.db_password,
+      database: envConfig.db.db_database,
+      port: Number(envConfig.db.db_port),
+      multipleStatements: true,
+    });
+
     // 1. Create tracking table if not exists
     await connection.query(`
       CREATE TABLE IF NOT EXISTS _migrations (
@@ -24,7 +34,7 @@ async function migrate() {
     const executed = new Set(rows.map((r: any) => r.name));
 
     const [batchRows]: any = await connection.query(`SELECT MAX(batch) as max_batch FROM _migrations`);
-    const nextBatch = (batchRows[0].max_batch || 0) + 1;
+    const nextBatch = (batchRows[0]?.max_batch || 0) + 1;
 
     // 3. Find pending .up.sql files
     const allFiles = fs.readdirSync(MIGRATIONS_DIR).sort();
@@ -55,7 +65,7 @@ async function migrate() {
     errorLogger.error(error, 'Migration failed:');
     process.exit(1);
   } finally {
-    await connection.end();
+    if (connection) await connection.end();
   }
 }
 

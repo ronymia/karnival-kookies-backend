@@ -369,6 +369,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/amqplib@npm:^0.10.8":
+  version: 0.10.8
+  resolution: "@types/amqplib@npm:0.10.8"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/9c5ab2e22f2b8dc2ace235d520bbae9453a0f4152b4f84ffa15a313f8840fe31bbf8b454e036f168a178cc44ed73bd3492e9c9cee425e3fcfef8cd5073141bfa
+  languageName: node
+  linkType: hard
+
 "@types/bcrypt@npm:^6.0.0":
   version: 6.0.0
   resolution: "@types/bcrypt@npm:6.0.0"
@@ -927,6 +936,13 @@ __metadata:
     json-schema-traverse: "npm:^0.4.1"
     uri-js: "npm:^4.2.2"
   checksum: 10c0/67966499dd272ecde1c2e467084411132891523d057487587879d39ac04207f4351b7b2324c83198013967fbfa632c1612adc960114a30770fbe07a0773b32c2
+  languageName: node
+  linkType: hard
+
+"amqplib@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "amqplib@npm:2.1.0"
+  checksum: 10c0/c87a31d3cc8d8393b148f5f8ef5aa1b86b99d79533e3fd0299a97c33e8c637a8fa9fd544444383d42ad4bdf6a951e34c170a6ced15be2459c14c8c15f906c7f2
   languageName: node
   linkType: hard
 
@@ -2140,6 +2156,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "karnival_kookies-backend@workspace:."
   dependencies:
+    "@types/amqplib": "npm:^0.10.8"
     "@types/bcrypt": "npm:^6.0.0"
     "@types/cookie-parser": "npm:^1.4.10"
     "@types/cors": "npm:^2.8.19"
@@ -2151,6 +2168,7 @@ __metadata:
     "@types/nodemailer": "npm:^8.0.1"
     "@typescript-eslint/eslint-plugin": "npm:^8.68.0"
     "@typescript-eslint/parser": "npm:^8.68.0"
+    amqplib: "npm:^2.1.0"
     bcrypt: "npm:^6.0.0"
     cookie-parser: "npm:^1.4.7"
     cors: "npm:^2.8.6"
