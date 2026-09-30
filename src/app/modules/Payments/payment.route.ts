@@ -1,6 +1,8 @@
 import express from 'express';
 import verifyToken from '../../middlewares/verifyToken';
+import validateRequest from '../../middlewares/validateRequest';
 import { PaymentControllers } from './payment.controller';
+import { PaymentValidations } from './payment.validation';
 
 const router = express.Router();
 
@@ -26,6 +28,7 @@ const router = express.Router();
 router.post(
   '/proceed',
   verifyToken,
+  validateRequest(PaymentValidations.proceedPaymentSchema),
   PaymentControllers.proceedPayment,
 );
 
