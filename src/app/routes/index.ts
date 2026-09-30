@@ -15,6 +15,7 @@ import { ProductRoutes } from '../modules/Products/product.route';
 import { ReviewRoutes } from '../modules/Reviews/review.route';
 import { SubscribersRoutes } from '../modules/Subscribers/subscribers.route';
 import { UserRoutes } from '../modules/Users/user.route';
+import { StripeRoutes } from '../modules/Stripe/stripe.route';
 
 const router = express.Router();
 
@@ -86,6 +87,10 @@ const moduleRoutes = [
   {
     path: '/v1.0/meta-data',
     route: MetaDataRoutes,
+  },
+  {
+    path: '/v1.0/stripe',
+    route: StripeRoutes,
   },
 ];
 

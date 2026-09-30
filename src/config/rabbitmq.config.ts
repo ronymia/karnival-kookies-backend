@@ -2,16 +2,15 @@ import amqplib, { Channel, ChannelModel } from 'amqplib';
 import { errorLogger, logger } from '../shared/logger';
 import { envConfig } from './env.config';
 
-export const QUEUES = {
-  STRIPE_PAYMENT_EVENTS: 'stripe_payment_events',
-} as const;
-
 let connection: ChannelModel | null = null;
 let channel: Channel | null = null;
 let isConnecting = false;
 const connectListeners: Array<(channel: Channel) => void> = [];
 
-export const onRabbitMQConnect = (listener: (channel: Channel) => void) => {
+/**
+ * Register a listener invoked whenever RabbitMQ connects or reconnects
+ */
+export const onRabbitMQConnect = (listener: (channel: Channel) => void): void => {
   connectListeners.push(listener);
   if (channel) {
     try {
@@ -22,9 +21,11 @@ export const onRabbitMQConnect = (listener: (channel: Channel) => void) => {
   }
 };
 
-// Resolve and format AMQP connection URL with encoded credentials
+/**
+ * Resolve and format AMQP connection URL with encoded credentials
+ */
 export const resolveRabbitMQUrl = (): string => {
-  let url = envConfig.rabbitmq.url?.trim() || '';
+  const url = envConfig.rabbitmq.url?.trim() || '';
 
   const user = process.env.RABBITMQ_DEFAULT_USER || process.env.RABBITMQ_USER;
   const pass = process.env.RABBITMQ_DEFAULT_PASS || process.env.RABBITMQ_PASSWORD;
@@ -50,6 +51,9 @@ export const resolveRabbitMQUrl = (): string => {
   return `amqp://${auth}${url}`;
 };
 
+/**
+ * Connect to RabbitMQ and initialize channel with auto-reconnection
+ */
 export const connectRabbitMQ = async (): Promise<{ connection: ChannelModel; channel: Channel } | null> => {
   if (channel && connection) {
     return { connection, channel };
@@ -91,11 +95,6 @@ export const connectRabbitMQ = async (): Promise<{ connection: ChannelModel; cha
       channel = null;
     });
 
-    // Assert primary queues
-    await channel.assertQueue(QUEUES.STRIPE_PAYMENT_EVENTS, {
-      durable: true,
-    });
-
     logger.info('RabbitMQ connected and initialized successfully');
     isConnecting = false;
 
@@ -120,6 +119,9 @@ export const connectRabbitMQ = async (): Promise<{ connection: ChannelModel; cha
   }
 };
 
+/**
+ * Retrieve active RabbitMQ channel (or establish connection if not already open)
+ */
 export const getRabbitMQChannel = async (): Promise<Channel | null> => {
   if (!channel) {
     const result = await connectRabbitMQ();
@@ -128,36 +130,20 @@ export const getRabbitMQChannel = async (): Promise<Channel | null> => {
   return channel;
 };
 
-export const publishToQueue = async (
-  queueName: string,
-  message: any,
-  options: amqplib.Options.Publish = { persistent: true },
-): Promise<boolean> => {
-  try {
-    const ch = await getRabbitMQChannel();
-    if (!ch) {
-      throw new Error('RabbitMQ channel is not available');
-    }
-
-    await ch.assertQueue(queueName, { durable: true });
-
-    const buffer = Buffer.from(
-      typeof message === 'string' ? message : JSON.stringify(message),
-    );
-
-    const sent = ch.sendToQueue(queueName, buffer, options);
-    if (sent) {
-      logger.info(`Message published to RabbitMQ queue [${queueName}]`);
-    } else {
-      logger.warn(`RabbitMQ queue [${queueName}] buffer is full`);
-    }
-    return sent;
-  } catch (error) {
-    errorLogger.error(error as Error, `Failed to publish message to [${queueName}]:`);
-    throw error;
+/**
+ * Retrieve active RabbitMQ connection
+ */
+export const getRabbitMQConnection = async (): Promise<ChannelModel | null> => {
+  if (!connection) {
+    const result = await connectRabbitMQ();
+    return result?.connection || null;
   }
+  return connection;
 };
 
+/**
+ * Gracefully close active RabbitMQ channel and connection
+ */
 export const closeRabbitMQ = async (): Promise<void> => {
   try {
     if (channel) {
